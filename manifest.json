@@ -1,0 +1,26 @@
+{
+  "name": "AutoCal",
+  "version": "1.0.0",
+  "description": "Reads emails and creates Google Calendar events using AI.",
+  "permissions": ["identity", "storage", "activeTab"],
+  "host_permissions": ["https://mail.google.com/*", "https://www.googleapis.com/*"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "assets/ext-icon.png",
+      "48": "assets/ext-icon.png",
+      "128": "assets/ext-icon.png"
+    }
+  },
+  "oauth2": {
+    "client_id": "718630915452-kmfp3o9h8dnoilp0tjmqrg2mielvbvve.apps.googleusercontent.com",
+    "scopes": [
+      "https://www.googleapis.com/auth/gmail.readonly",
+      "https://www.googleapis.com/auth/calendar"
+    ]
+  },
+  "manifest_version": 3
+}
