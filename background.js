@@ -90,7 +90,7 @@ async function fetchEmails() {
 
 // Parse email content using ChatGPT
 async function parseEmailWithChatGPT(emailBody) {
-    const apiKey = "ysk-proj-eLKHZvpOHyjhaa8rYjGrbGADFppBCBqfbhaGL74wbj8tT1VDEoH0LFA5zYIZ0WcaGR4ZSzhfpGT3BlbkFJ94xFpwEMV31VXexvGE96lHoGwAuDRboNAEchQrs2o9F5POfQUSxc7CESZZw4tnfplBwe_L_mgA"; // Replace with your OpenAI API key
+    const apiKey = "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"; // Replace with your OpenAI API key
 
     try {
         // Send a POST request to the OpenAI API
@@ -101,7 +101,7 @@ async function parseEmailWithChatGPT(emailBody) {
                 Authorization: `Bearer ${apiKey}`,
             },
             body: JSON.stringify({
-                model: "gpt-3.5-turbo",
+                model: "gpt-4o-mini",
                 messages: [
                     {
                         role: "system",
