@@ -1,5 +1,18 @@
 // Authenticate and get access token
 
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    if (message.action === "fetchEmails") {
+        fetchEmails()
+            .then((result) => {
+                sendResponse({ success: true, data: result });
+            })
+            .catch((error) => {
+                console.error("Error in fetchEmails:", error);
+                sendResponse({ success: false, error: error.message });
+            });
+        return true; // Keep the message channel open for asynchronous response
+    }
+});
 function getAuthToken() {
     return new Promise((resolve, reject) => {
         chrome.identity.getAuthToken({ interactive: true }, (token) => {
