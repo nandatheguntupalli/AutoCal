@@ -1,14 +1,46 @@
 // Authenticate and get access token
+
 function getAuthToken() {
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
         chrome.identity.getAuthToken({ interactive: true }, (token) => {
-            if (chrome.runtime.lastError) {
-                console.error("Auth Error:", chrome.runtime.lastError.message);
-                resolve(null);
-            } else {
-                resolve(token);
+            if (chrome.runtime.lastError || !token) {
+                console.error("Auth Error:", chrome.runtime.lastError?.message || "No token returned");
+                reject(chrome.runtime.lastError || new Error("Failed to get token"));
+                return;
             }
+            console.log("Access Token:", token);
+            resolve(token);
         });
+    });
+}
+
+// Fetch the user's information using their access token
+async function getUserInfo(token) {
+    try {
+        const response = await fetch("https://www.googleapis.com/oauth2/v3/tokeninfo", {
+            headers: { Authorization: `Bearer ${token}` },
+        });
+        if (response.ok) {
+            const userInfo = await response.json();
+            console.log("User Info:", userInfo);
+            return userInfo.email; // Use the email to uniquely identify the user
+        } else {
+            console.error("Error fetching user info:", await response.json());
+        }
+    } catch (error) {
+        console.error("Error in getUserInfo:", error);
+    }
+    return null;
+}
+
+// Clear the cached authentication token (e.g., for logout or reauth)
+function clearAuthToken() {
+    chrome.identity.getAuthToken({ interactive: false }, (token) => {
+        if (token) {
+            chrome.identity.removeCachedAuthToken({ token }, () => {
+                console.log("Token invalidated");
+            });
+        }
     });
 }
 
@@ -69,19 +101,58 @@ async function fetchEmails() {
         const emailDetails = await fetchEmailDetails(token, messageId);
 
         if (emailDetails) {
+            // Log the entire email payload for debugging
+            console.log("Email Details Payload:", emailDetails.payload);
+
             // Extract email body
-            const encodedBody = emailDetails.payload.parts?.[0]?.body?.data;
+            let encodedBody = emailDetails.payload.body?.data;
+
+            // Fallback: Iterate through parts if the body is not in payload.body
+            if (!encodedBody && emailDetails.payload.parts) {
+                for (const part of emailDetails.payload.parts) {
+                    if (part.mimeType === "text/plain" && part.body?.data) {
+                        encodedBody = part.body.data;
+                        break;
+                    }
+                }
+            }
+
+            if (!encodedBody) {
+                console.error("Encoded email body not found.");
+                return; // Exit if no body is found
+            }
+
             const emailBody = decodeBase64(encodedBody);
-            console.log("Email Body Content:", emailBody); // Log the email body here
 
             // Pass the email body to ChatGPT for parsing
             const parsedDetails = await parseEmailWithChatGPT(emailBody);
-            console.log("Parsed Event Details:", parsedDetails); // Log parsed details
+            console.log("Parsed Event Details:", parsedDetails);
 
-            // Use parsed details to create a calendar event
-            if (parsedDetails) {
-                await createCalendarEvent(parsedDetails);
+            // Validate parsed details
+            if (!parsedDetails || !parsedDetails.summary || !parsedDetails.start_time || !parsedDetails.end_time) {
+                console.error("Invalid event details provided:", parsedDetails);
+                return; // Exit if parsed details are missing or invalid
             }
+
+            // Transform parsed details into the required format for createCalendarEvent
+            const eventDetails = {
+                summary: parsedDetails.summary,
+                location: parsedDetails.location || "", // Default to empty string if location is null
+                start: {
+                    dateTime: parsedDetails.start_time,
+                    timeZone: "Asia/Kolkata", // Set the appropriate time zone
+                },
+                end: {
+                    dateTime: parsedDetails.end_time,
+                    timeZone: "Asia/Kolkata", // Set the appropriate time zone
+                },
+            };
+
+            // Log the transformed event details for debugging
+            console.log("Event Details Sent to Google Calendar API:", eventDetails);
+
+            // Create the calendar event
+            await createCalendarEvent(eventDetails);
         }
     } else {
         console.error("Error fetching emails:", response.statusText);
@@ -94,6 +165,7 @@ async function parseEmailWithChatGPT(emailBody) {
 
     try {
         // Send a POST request to the OpenAI API
+        console.log("Email Body Content:", emailBody);
         const response = await fetch("https://api.openai.com/v1/chat/completions", {
             method: "POST",
             headers: {
@@ -105,13 +177,14 @@ async function parseEmailWithChatGPT(emailBody) {
                 messages: [
                     {
                         role: "system",
-                        content: "You are an assistant that extracts event details (title, start time, end time, and location) as JSON from email content.",
+                        content: "You are an assistant that extracts event details (summary, start time, end time, and location) as JSON from email content.",
                     },
                     {
                         role: "user",
                         content: `Extract event details as JSON from the following email content: "${emailBody}"`,
                     },
                 ],
+                response_format: { type: "json_object" }
             }),
         });
 
@@ -145,13 +218,7 @@ async function parseEmailWithChatGPT(emailBody) {
 
 // Create calendar event
 async function createCalendarEvent(eventDetails) {
-    if (!eventDetails.summary || !eventDetails.start || !eventDetails.end) {
-        console.error("Invalid event details provided:", eventDetails);
-        return;
-    }
-
-    const token = await getAuthToken();
-    if (!token) return;
+    const token = await getAuthToken(); // Ensure token is fetched correctly
 
     try {
         const response = await fetch(
@@ -159,7 +226,7 @@ async function createCalendarEvent(eventDetails) {
             {
                 method: "POST",
                 headers: {
-                    Authorization: `Bearer ${token}`,
+                    "Authorization": `Bearer ${token}`,
                     "Content-Type": "application/json",
                 },
                 body: JSON.stringify(eventDetails),
@@ -167,13 +234,14 @@ async function createCalendarEvent(eventDetails) {
         );
 
         if (response.ok) {
-            console.log("Event Created Successfully:", await response.json());
+            const eventData = await response.json();
+            console.log("Event Created Successfully:", eventData);
         } else {
-            const error = await response.json();
-            console.error("Error creating calendar event:", error);
+            const errorData = await response.json();
+            console.error("Error creating calendar event:", errorData);
         }
     } catch (error) {
-        console.error("Error in createCalendarEvent:", error);
+        console.error("Unexpected error in createCalendarEvent:", error);
     }
 }
 
