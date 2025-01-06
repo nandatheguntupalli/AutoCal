@@ -8,12 +8,12 @@
     "service_worker": "background.js"
   },
   "action": {
-    "default_popup": "popup.html",
-    "default_icon": {
-      "16": "assets/ext-icon.png",
-      "48": "assets/ext-icon.png",
-      "128": "assets/ext-icon.png"
-    }
+    "default_popup": "popup.html"
+  },
+  "icons": {
+    "16": "assets/logo16.png",
+    "48": "assets/logo48.png",
+    "128": "assets/logo128.png"
   },
   "oauth2": {
     "client_id": "242469590577-9hp4id5jkb8sj343dlh8dc4ub049v4th.apps.googleusercontent.com",
