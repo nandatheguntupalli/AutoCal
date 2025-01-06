@@ -1,7 +1,7 @@
 {
   "name": "AutoCal",
   "version": "1.0.0",
-  "description": "Reads emails and creates Google Calendar events using AI.",
+  "description": "Email to Calendar Manager",
   "permissions": ["identity", "storage", "activeTab"],
   "host_permissions": ["https://mail.google.com/*", "https://www.googleapis.com/*"],
   "background": {

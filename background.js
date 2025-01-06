@@ -95,7 +95,6 @@ async function fetchEmailDetails(token, messageId) {
     }
 }
 
-// Fetch Gmail emails
 async function fetchEmails() {
     const token = await getAuthToken();
     const response = await fetch(
@@ -114,8 +113,20 @@ async function fetchEmails() {
         const emailDetails = await fetchEmailDetails(token, messageId);
 
         if (emailDetails) {
-            // Log the entire email payload for debugging
-            console.log("Email Details Payload:", emailDetails.payload);
+            // Extract metadata
+            const headers = emailDetails.payload.headers;
+            const fromHeader = headers.find((header) => header.name === "From");
+            const sender = fromHeader ? fromHeader.value : "Unknown Sender";
+
+            const subjectHeader = headers.find((header) => header.name === "Subject");
+            const subject = subjectHeader ? subjectHeader.value : "No Subject";
+
+            const dateHeader = headers.find((header) => header.name === "Date");
+            const emailDate = dateHeader ? new Date(dateHeader.value).toISOString() : null;
+
+            console.log("Sender:", sender);
+            console.log("Subject:", subject);
+            console.log("Email Date:", emailDate);
 
             // Extract email body
             let encodedBody = emailDetails.payload.body?.data;
@@ -137,8 +148,8 @@ async function fetchEmails() {
 
             const emailBody = decodeBase64(encodedBody);
 
-            // Pass the email body to ChatGPT for parsing
-            const parsedDetails = await parseEmailWithChatGPT(emailBody);
+            // Pass the email body and metadata to ChatGPT for parsing
+            const parsedDetails = await parseEmailWithChatGPT(emailBody, sender, subject, emailDate);
             console.log("Parsed Event Details:", parsedDetails);
 
             // Validate parsed details
@@ -172,13 +183,18 @@ async function fetchEmails() {
     }
 }
 
-// Parse email content using ChatGPT
-async function parseEmailWithChatGPT(emailBody) {
+async function parseEmailWithChatGPT(emailBody, sender, subject, emailDate) {
     const apiKey = "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"; // Replace with your OpenAI API key
 
     try {
         // Send a POST request to the OpenAI API
+        console.log("Email Sender:", sender);
+        console.log("Email Date:", emailDate);
         console.log("Email Body Content:", emailBody);
+        
+        
+        
+
         const response = await fetch("https://api.openai.com/v1/chat/completions", {
             method: "POST",
             headers: {
@@ -190,14 +206,38 @@ async function parseEmailWithChatGPT(emailBody) {
                 messages: [
                     {
                         role: "system",
-                        content: "You are an assistant that extracts event details (summary, start time, end time, and location) as JSON from email content.",
+                        content: `You are an assistant that extracts event details (summary, start_time, end_time, and location) as JSON from email content. 
+        Use the provided "Email Sent Date" as the reference date for interpreting any relative dates mentioned in the email, such as "next Monday" or "this Friday". 
+        Ensure that "next Monday" means the first Monday after the reference date, even if the reference date is already a Monday. 
+        Always calculate relative dates based on the reference date provided. Extract times as accurately as possible in 24-hour ISO 8601 format (e.g., '2025-01-06T10:00:00Z' for 10:00 AM). 
+        If the email specifies a time range (e.g., '10am to 11am'), split it into 'start_time' and 'end_time'. 
+        Always assume times are in the time zone of the sender unless specified otherwise in the email.`,
                     },
                     {
                         role: "user",
-                        content: `Extract event details as JSON from the following email content: "${emailBody}"`,
-                    },
+                        content: `
+                            Extract event details as JSON from the following email content and metadata:
+                            - Email Sent Date: ${emailDate}
+                            - Sender: ${sender}
+                            - Subject: ${subject}
+                    
+                            Email Content: "${emailBody}"
+                    
+                            Return the extracted details in this format:
+                            {
+                              "summary": "Event Summary",
+                              "start_time": "2025-01-06T10:00:00Z",
+                              "end_time": "2025-01-06T11:00:00Z",
+                              "location": "Event Location",
+                              "sender": {
+                                "name": "Sender Name",
+                                "email": "sender@example.com"
+                              }
+                            }
+                        `,
+                    }
                 ],
-                response_format: { type: "json_object" }
+                response_format: { type: "json_object" },
             }),
         });
 
