@@ -74,6 +74,21 @@ function decodeBase64(encodedString) {
     }
 }
 
+// Save processed message IDs
+function saveProcessedEmailIds(ids) {
+    chrome.storage.local.set({ processedEmailIds: ids }, () => {
+        console.log("Processed email IDs saved.");
+    });
+}
+
+// Get processed message IDs
+function getProcessedEmailIds() {
+    return new Promise((resolve) => {
+        chrome.storage.local.get("processedEmailIds", (result) => {
+            resolve(result.processedEmailIds || []);
+        });
+    });
+}
 // Fetch email details
 async function fetchEmailDetails(token, messageId) {
     try {
@@ -109,76 +124,92 @@ async function fetchEmails() {
         const data = await response.json();
         console.log("Fetched Emails Metadata:", data);
 
-        // Fetch details for the first email as an example
-        const messageId = data.messages[0].id;
-        const emailDetails = await fetchEmailDetails(token, messageId);
+        // Get processed email IDs to avoid duplicates
+        const processedEmailIds = await getProcessedEmailIds();
 
-        if (emailDetails) {
-            // Extract metadata
-            const headers = emailDetails.payload.headers;
-            const fromHeader = headers.find((header) => header.name === "From");
-            const sender = fromHeader ? fromHeader.value : "Unknown Sender";
+        // Filter new emails
+        const newEmails = data.messages.filter(
+            (message) => !processedEmailIds.includes(message.id)
+        );
 
-            const subjectHeader = headers.find((header) => header.name === "Subject");
-            const subject = subjectHeader ? subjectHeader.value : "No Subject";
+        console.log("New Emails to Process:", newEmails);
 
-            const dateHeader = headers.find((header) => header.name === "Date");
-            const emailDate = dateHeader ? new Date(dateHeader.value).toISOString() : null;
+        for (const message of newEmails) {
+            const emailDetails = await fetchEmailDetails(token, message.id);
 
-            console.log("Sender:", sender);
-            console.log("Subject:", subject);
-            console.log("Email Date:", emailDate);
+            if (emailDetails) {
+                // Extract metadata
+                const headers = emailDetails.payload.headers;
+                const fromHeader = headers.find((header) => header.name === "From");
+                const sender = fromHeader ? fromHeader.value : "Unknown Sender";
 
-            // Extract email body
-            let encodedBody = emailDetails.payload.body?.data;
+                const subjectHeader = headers.find((header) => header.name === "Subject");
+                const subject = subjectHeader ? subjectHeader.value : "No Subject";
 
-            // Fallback: Iterate through parts if the body is not in payload.body
-            if (!encodedBody && emailDetails.payload.parts) {
-                for (const part of emailDetails.payload.parts) {
-                    if (part.mimeType === "text/plain" && part.body?.data) {
-                        encodedBody = part.body.data;
-                        break;
+                const dateHeader = headers.find((header) => header.name === "Date");
+                const emailDate = dateHeader ? new Date(dateHeader.value).toISOString() : null;
+
+                console.log("Sender:", sender);
+                console.log("Subject:", subject);
+                console.log("Email Date:", emailDate);
+
+                // Extract email body
+                let encodedBody = emailDetails.payload.body?.data;
+
+                // Fallback: Iterate through parts if the body is not in payload.body
+                if (!encodedBody && emailDetails.payload.parts) {
+                    for (const part of emailDetails.payload.parts) {
+                        if (part.mimeType === "text/plain" && part.body?.data) {
+                            encodedBody = part.body.data;
+                            break;
+                        }
                     }
                 }
+
+                if (!encodedBody) {
+                    console.error("Encoded email body not found.");
+                    continue; // Skip if no body is found
+                }
+
+                const emailBody = decodeBase64(encodedBody);
+
+                // Pass the email body and metadata to ChatGPT for parsing
+                const parsedDetails = await parseEmailWithChatGPT(emailBody, sender, subject, emailDate);
+                console.log("Parsed Event Details:", parsedDetails);
+
+                // Validate parsed details
+                if (!parsedDetails || !parsedDetails.summary || !parsedDetails.start_time || !parsedDetails.end_time) {
+                    console.error("Invalid event details provided:", parsedDetails);
+                    continue; // Skip invalid event details
+                }
+
+                // Transform parsed details into the required format for createCalendarEvent
+                const eventDetails = {
+                    summary: parsedDetails.summary,
+                    location: parsedDetails.location || "", // Default to empty string if location is null
+                    start: {
+                        dateTime: parsedDetails.start_time.slice(0, -1),
+                        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone, // Set the appropriate time zone
+                    },
+                    end: {
+                        dateTime: parsedDetails.end_time.slice(0, -1),
+                        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone, // Set the appropriate time zone
+                    },
+                };
+
+                // Log the transformed event details for debugging
+                console.log("Event Details Sent to Google Calendar API:", eventDetails);
+
+                // Create the calendar event
+                await createCalendarEvent(eventDetails);
+
+                // Add the email ID to the processed list
+                processedEmailIds.push(message.id);
             }
-
-            if (!encodedBody) {
-                console.error("Encoded email body not found.");
-                return; // Exit if no body is found
-            }
-
-            const emailBody = decodeBase64(encodedBody);
-
-            // Pass the email body and metadata to ChatGPT for parsing
-            const parsedDetails = await parseEmailWithChatGPT(emailBody, sender, subject, emailDate);
-            console.log("Parsed Event Details:", parsedDetails);
-
-            // Validate parsed details
-            if (!parsedDetails || !parsedDetails.summary || !parsedDetails.start_time || !parsedDetails.end_time) {
-                console.error("Invalid event details provided:", parsedDetails);
-                return; // Exit if parsed details are missing or invalid
-            }
-
-            // Transform parsed details into the required format for createCalendarEvent
-            const eventDetails = {
-                summary: parsedDetails.summary,
-                location: parsedDetails.location || "", // Default to empty string if location is null
-                start: {
-                    dateTime: parsedDetails.start_time.slice(0, -1),
-                    timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone, // Set the appropriate time zone
-                },
-                end: {
-                    dateTime: parsedDetails.end_time.slice(0, -1),
-                    timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone, // Set the appropriate time zone
-                },
-            };
-
-            // Log the transformed event details for debugging
-            console.log("Event Details Sent to Google Calendar API:", eventDetails);
-
-            // Create the calendar event
-            await createCalendarEvent(eventDetails);
         }
+
+        // Save updated processed email IDs
+        saveProcessedEmailIds(processedEmailIds);
     } else {
         console.error("Error fetching emails:", response.statusText);
     }
