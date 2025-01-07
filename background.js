@@ -241,6 +241,7 @@ async function parseEmailWithChatGPT(emailBody, sender, subject, emailDate) {
                         -- End of Input --
                         You should extract the summary of the event from the email body. Find the start_time and end_time by looking through the email body. The start_time and end_time are assumed to be in the user's local time zone, which is in the "Current Local Date for User" line.
                         If a relative date (e.g., "this Friday") is mentioned, calculate the exact date using the "Current Local Date for User" line as a reference. For example, if the email says "this Friday" and today is Monday, then **this Friday** should be the next Friday in the calendar, not the previous Friday.
+                        If there is no specific end time mentioned, the default length of the event should be 1 hour.
                         Finally, when returning the start_time and end_time, convert the dates and times from the user's local time zone to UTC. If the event is scheduled at night (e.g., 10 PM), ensure the time conversion accounts for the time zone difference, and if needed, adjust the date to the next day in UTC. If the event is schedule in the morning, ensure that the time conversion accounts for the time zone difference, and if needed, adjust the date to the previous day in UTC. If no location is mentioned, leave the location field blank.
                         `
                     },
