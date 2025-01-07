@@ -164,12 +164,12 @@ async function fetchEmails() {
                 summary: parsedDetails.summary,
                 location: parsedDetails.location || "", // Default to empty string if location is null
                 start: {
-                    dateTime: parsedDetails.start_time,
-                    timeZone: "UTC", // Set the appropriate time zone
+                    dateTime: parsedDetails.start_time.slice(0, -1),
+                    timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone, // Set the appropriate time zone
                 },
                 end: {
-                    dateTime: parsedDetails.end_time,
-                    timeZone: "UTC", // Set the appropriate time zone
+                    dateTime: parsedDetails.end_time.slice(0, -1),
+                    timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone, // Set the appropriate time zone
                 },
             };
 
@@ -191,29 +191,23 @@ async function parseEmailWithChatGPT(emailBody, sender, subject, emailDate) {
 
     try {
         // Send a POST request to the OpenAI API
+        const dateObjUTC = new Date(emailDate);
+        const localDateString = dateObjUTC.toLocaleString("en-US", {
+            timeZoneName: "short",
+            hour12: false
+        });
+        const localDate = new Date(localDateString);
+        const formattedLocalDate = localDate.toISOString();
+        
         console.log("Email Sender:", sender);
-        console.log("Email Date:", emailDate);
+        console.log("Email Date:", formattedLocalDate);
         console.log("Email Body Content:", emailBody);
         
-        
         const gptInput = `
-            Extract event details as JSON from the following email content and metadata:\n
-            Email Received Date: ${emailDate}\n
+            Email Received Date: ${formattedLocalDate}\n
             Sender: ${sender}\n
             Subject: ${subject}\n
             Email Content: "${emailBody}"\n
-            Current Local Date for User: ${(new Date).toString()}\n
-            Return the extracted details in this format:\n
-            {\n
-                "summary": "Event Summary",\n
-                "start_time": "YYYY-MM-DDThh:mm:ssZ",\n
-                "end_time": "YYYY-MM-DDThh:mm:ssZ",\n
-                "location": "Event Location",\n
-                "sender": {\n
-                "name": "Sender Name",\n
-                "email": "sender@example.com"\n
-                }\n
-            }
         `;
 
         console.log("ChatGPT Input:\n", gptInput);
@@ -230,19 +224,25 @@ async function parseEmailWithChatGPT(emailBody, sender, subject, emailDate) {
                     {
                         role: "system",
                         content: `
-                        You are an assistant that extracts event details (summary, start_time, end_time, and location) as JSON from email content.
-                        You will be given the email data in the following format, where things in {} represent a variable:
-                        -- Start of Input --
-                        Email Received Date: {The date the email was received by the user, given in UTC}
-                        Sender: {The email address of the user that sent the email}
-                        Subject: {The subject line of the email}
-                        Email Content: "{The actual text inside the body of the email}"
-                        Current Local Date for User: {The day of the week, date, and time in the user's local time zone}
-                        -- End of Input --
-                        You should extract the summary of the event from the email body. Find the start_time and end_time by looking through the email body. The start_time and end_time are assumed to be in the user's local time zone, which is in the "Current Local Date for User" line.
-                        If a relative date (e.g., "this Friday") is mentioned, calculate the exact date using the "Current Local Date for User" line as a reference. For example, if the email says "this Friday" and today is Monday, then **this Friday** should be the next Friday in the calendar, not the previous Friday.
-                        If there is no specific end time mentioned, the default length of the event should be 1 hour.
-                        Finally, when returning the start_time and end_time, convert the dates and times from the user's local time zone to UTC. If the event is scheduled at night (e.g., 10 PM), ensure the time conversion accounts for the time zone difference, and if needed, adjust the date to the next day in UTC. If the event is schedule in the morning, ensure that the time conversion accounts for the time zone difference, and if needed, adjust the date to the previous day in UTC. If no location is mentioned, leave the location field blank.
+                        You are an assistant that extracts event details (summary, start_time, end_time, and location) as JSON from email content. You will be given the email data in the following format, where things in {} represent a variable:
+                        \n-- Start of Input –-\n
+                        Email Received Date: {The date and time the email was received by the user, given in the user’s local timezone}\n
+                        Sender: {The email address of the user that sent the email}\n
+                        Subject: {The subject line of the email}\n
+                        Email Content: "{The actual text inside the body of the email}"\n
+                        -- End of Input –-\n
+                        You should extract the summary of the event from the email body. Find the start_time and end_time by looking through the email body. The start_time and end_time are assumed to be in the user's local time zone. If a relative date (e.g., "this Friday") is mentioned, calculate the exact date using the "Current Local Date for User" line as a reference. For example, if the email says "this Friday" and today is Monday, then **this Friday** should be the next Friday in the calendar, not the previous Friday. If there is no specific end time mentioned, the default length of the event should be 1 hour. Finally, when returning the start_time and end_time, format these in the ISO format, which matches the format of the input. If no location is mentioned, leave the location field blank.
+                        Return the extracted details in this format:\n
+                        {\n
+                        "summary": "Event Summary",\n
+                        "start_time": "YYYY-MM-DDThh:mm:ssZ",\n
+                        "end_time": "YYYY-MM-DDThh:mm:ssZ",\n
+                        "location": "Event Location",\n
+                        "sender": {\n
+                        "name": "Sender Name",\n
+                        "email": "sender@example.com"\n
+                        }\n
+                        }
                         `
                     },
                     {
