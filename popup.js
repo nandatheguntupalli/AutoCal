@@ -18,10 +18,6 @@ document.addEventListener("DOMContentLoaded", async () => {
             });
         });
     }
-
-   
-    // Load and render pending events
-    // Load and render pending events
     // Load and render pending events
     async function loadPendingEvents() {
         const events = await new Promise((resolve) =>
