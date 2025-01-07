@@ -19,6 +19,9 @@ document.addEventListener("DOMContentLoaded", async () => {
         });
     }
 
+   
+    // Load and render pending events
+    // Load and render pending events
     // Load and render pending events
     async function loadPendingEvents() {
         const events = await new Promise((resolve) =>
@@ -36,11 +39,33 @@ document.addEventListener("DOMContentLoaded", async () => {
             const listItem = document.createElement("li");
             listItem.className = "event-item";
 
+            // Format date and time
+            const formatDateTime = (dateTime) => {
+                const date = new Date(dateTime);
+                const options = {
+                    weekday: "short", // Short form for the day of the week
+                    month: "numeric",
+                    day: "numeric",
+                    year: "2-digit",
+                };
+                const timeOptions = {
+                    hour: "numeric",
+                    minute: "2-digit",
+                    hour12: true,
+                };
+
+                const formattedDate = date.toLocaleDateString("en-US", options); // e.g., "Tue, 1/14/25"
+                const formattedTime = date.toLocaleTimeString("en-US", timeOptions); // e.g., "10:00 AM"
+                return { formattedDate, formattedTime };
+            };
+
+            const start = formatDateTime(event.start.dateTime);
+            const end = formatDateTime(event.end.dateTime);
+
             listItem.innerHTML = `
                 <div contenteditable="true" class="event-summary">${event.summary || "No Title"}</div>
                 <div class="event-details">
-                    <span contenteditable="true">Start: ${event.start.dateTime}</span><br>
-                    <span contenteditable="true">End: ${event.end.dateTime}</span><br>
+                    <span contenteditable="true">${start.formattedDate} from ${start.formattedTime} to ${end.formattedTime}</span><br>
                     <span contenteditable="true">Location: ${event.location || "No location"}</span>
                 </div>
                 <button class="approve-button" data-index="${index}">✔ Approve</button>
