@@ -166,7 +166,7 @@ async function fetchEmails() {
             saveProcessedEmailIds(searchedIds);
         }
 
-        console.log("New Emails to Process:", newEmails);
+        console.log("New email ids:", idsToProcess);
 
         for (const message of newEmails) {
             const emailDetails = await fetchEmailDetails(token, message.id);
