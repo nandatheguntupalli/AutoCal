@@ -395,3 +395,4 @@ function sendNotification(newEmailCount) {
 }
 
 setInterval(fetchEmails, POLL_INTERVAL);
+fetchEmails();
