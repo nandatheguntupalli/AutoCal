@@ -198,14 +198,11 @@ async function parseEmailWithChatGPT(emailBody, sender, subject, emailDate) {
         
         const gptInput = `
             Extract event details as JSON from the following email content and metadata:\n
-            - Email Sent Date: ${emailDate}\n
-            - Sender: ${sender}\n
-            - Subject: ${subject}\n
-    
+            Email Received Date: ${emailDate}\n
+            Sender: ${sender}\n
+            Subject: ${subject}\n
             Email Content: "${emailBody}"\n
-    
             Current Local Date for User: ${(new Date).toString()}\n
-
             Return the extracted details in this format:\n
             {\n
                 "summary": "Event Summary",\n
@@ -232,12 +229,20 @@ async function parseEmailWithChatGPT(emailBody, sender, subject, emailDate) {
                 messages: [
                     {
                         role: "system",
-                        content: `You are an assistant that extracts event details (summary, start_time, end_time, and location) as JSON from email content. 
-        Use the provided "Current Local Date for User" as the reference date for interpreting any relative dates mentioned in the email, such as "next Monday" or "this Friday". 
-        Ensure that "next Monday" means the first Monday after the reference date, even if the reference date is already a Monday. 
-        The "Email Sent Date" is given in UTC. Extract times as accurately as possible in 24-hour ISO 8601 format (e.g., '2025-01-06T10:00:00Z' for 10:00 AM UTC). 
-        If the email specifies a time range (e.g., '10am to 11am'), split it into 'start_time' and 'end_time'. 
-        Always assume times are in the time zone of the sender unless specified otherwise in the email.`,
+                        content: `
+                        You are an assistant that extracts event details (summary, start_time, end_time, and location) as JSON from email content.
+                        You will be given the email data in the following format, where things in {} represent a variable:
+                        -- Start of Input --
+                        Email Received Date: {The date the email was received by the user, given in UTC}
+                        Sender: {The email address of the user that sent the email}
+                        Subject: {The subject line of the email}
+                        Email Content: "{The actual text inside the body of the email}"
+                        Current Local Date for User: {The day of the week, date, and time in the user's local time zone}
+                        -- End of Input --
+                        You should extract the summary of the event from the email body. Find the start_time and end_time by looking through the email body. The start_time and end_time are assumed to be in the user's local time zone, which is in the "Current Local Date for User" line.
+                        If a relative date (e.g., "this Friday") is mentioned, calculate the exact date using the "Current Local Date for User" line as a reference. For example, if the email says "this Friday" and today is Monday, then **this Friday** should be the next Friday in the calendar, not the previous Friday.
+                        Finally, when returning the start_time and end_time, convert the dates and times from the user's local time zone to UTC. If the event is scheduled at night (e.g., 10 PM), ensure the time conversion accounts for the time zone difference, and if needed, adjust the date to the next day in UTC. If no location is mentioned, leave the location field blank.
+                        `
                     },
                     {
                         role: "user",
