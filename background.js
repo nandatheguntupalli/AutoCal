@@ -1,5 +1,6 @@
-// Authenticate and get access token
+POLL_INTERVAL = 30 * 1000; // 30 seconds
 
+// Authenticate and get access token
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.action === "fetchEmails") {
         fetchEmails()
@@ -12,6 +13,23 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             });
         return true; // Keep the message channel open for asynchronous response
     }
+});
+function saveFirstUseTimestamp() {
+    const firstUseTimestamp = new Date().toISOString();
+    chrome.storage.local.set({ firstUseTimestamp }, () => {
+        console.log("First use timestamp saved:", firstUseTimestamp);
+    });
+}
+
+function getFirstUseTimestamp() {
+    return new Promise((resolve) => {
+        chrome.storage.local.get("firstUseTimestamp", (result) => {
+            resolve(result.firstUseTimestamp || null);
+        });
+    });
+}
+chrome.runtime.onInstalled.addListener(() => {
+    console.log("Extension installed.");
 });
 
 function getAuthToken() {
@@ -113,6 +131,8 @@ async function fetchEmailDetails(token, messageId) {
 
 async function fetchEmails() {
     const token = await getAuthToken();
+    const firstUseTimestamp = await getFirstUseTimestamp();
+
     const response = await fetch(
         "https://www.googleapis.com/gmail/v1/users/me/messages",
         {
@@ -122,20 +142,35 @@ async function fetchEmails() {
 
     if (response.ok) {
         const data = await response.json();
-        console.log("Fetched Emails Metadata:", data);
 
-        // Get processed email IDs to avoid duplicates
-        const processedEmailIds = await getProcessedEmailIds();
+        idsToProcess = [];
 
-        // Filter new emails
-        const newEmails = data.messages.filter(
-            (message) => !processedEmailIds.includes(message.id)
-        );
+        // if calling for first time
+        if (!firstUseTimestamp) {
+            console.log("First time fetching emails");
+            saveFirstUseTimestamp();
+            for (let i = 0; i < 10; i++) {
+                const id = data.messages[i].id;
+                idsToProcess.push(id);
+            }
+            saveProcessedEmailIds(data.messages.map(x => x.id));
+        } else {
+            console.log("First use date: ", firstUseTimestamp)
+            console.log("Continuing fetching from previously searched emails")
+            let searchedIds = await getProcessedEmailIds();
+            for (const message of data.messages) {
+                if (!searchedIds.includes(message.id)) {
+                    searchedIds.push(message.id);
+                    idsToProcess.push(message.id);
+                }
+            }
+            saveProcessedEmailIds(searchedIds);
+        }
 
-        console.log("New Emails to Process:", newEmails);
+        console.log("New email ids:", idsToProcess);
 
-        for (const message of newEmails) {
-            const emailDetails = await fetchEmailDetails(token, message.id);
+        for (const messageId of idsToProcess) {
+            const emailDetails = await fetchEmailDetails(token, messageId);
 
             if (emailDetails) {
                 // Extract metadata
@@ -156,7 +191,7 @@ async function fetchEmails() {
                 // Extract email body
                 let encodedBody = emailDetails.payload.body?.data;
 
-                // Fallback: Iterate through parts if the body is not in payload.body
+                // Fallback: Check parts for the body
                 if (!encodedBody && emailDetails.payload.parts) {
                     for (const part of emailDetails.payload.parts) {
                         if (part.mimeType === "text/plain" && part.body?.data) {
@@ -179,7 +214,7 @@ async function fetchEmails() {
 
                 // Validate parsed details
                 if (!parsedDetails || !parsedDetails.summary || !parsedDetails.start_time || !parsedDetails.end_time) {
-                    console.error("Invalid event details provided:", parsedDetails);
+                    console.log("%cEmail has no events!", "font-size: 30px;");
                     continue; // Skip invalid event details
                 }
 
@@ -202,14 +237,8 @@ async function fetchEmails() {
 
                 // Create the calendar event
                 await createCalendarEvent(eventDetails);
-
-                // Add the email ID to the processed list
-                processedEmailIds.push(message.id);
             }
         }
-
-        // Save updated processed email IDs
-        saveProcessedEmailIds(processedEmailIds);
     } else {
         console.error("Error fetching emails:", response.statusText);
     }
@@ -263,6 +292,7 @@ async function parseEmailWithChatGPT(emailBody, sender, subject, emailDate) {
                         Email Content: "{The actual text inside the body of the email}"\n
                         -- End of Input –-\n
                         You should extract the summary of the event from the email body. Find the start_time and end_time by looking through the email body. The start_time and end_time are assumed to be in the user's local time zone. If a relative date (e.g., "this Friday") is mentioned, calculate the exact date using the "Current Local Date for User" line as a reference. For example, if the email says "this Friday" and today is Monday, then **this Friday** should be the next Friday in the calendar, not the previous Friday. If there is no specific end time mentioned, the default length of the event should be 1 hour. Finally, when returning the start_time and end_time, format these in the ISO format, which matches the format of the input. If no location is mentioned, leave the location field blank.
+                        If there is no event mentioned, set everything to null. Do not create an event for every email that is sent only the ones that specifically talk about an event that is happening.\n
                         Return the extracted details in this format:\n
                         {\n
                         "summary": "Event Summary",\n
@@ -350,7 +380,5 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     return true;
 });
 
-// Authenticate on installation
-chrome.runtime.onInstalled.addListener(() => {
-    console.log("Extension installed.");
-});
+setInterval(fetchEmails, POLL_INTERVAL);
+fetchEmails();
