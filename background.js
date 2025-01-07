@@ -168,8 +168,8 @@ async function fetchEmails() {
 
         console.log("New email ids:", idsToProcess);
 
-        for (const message of newEmails) {
-            const emailDetails = await fetchEmailDetails(token, message.id);
+        for (const messageId of idsToProcess) {
+            const emailDetails = await fetchEmailDetails(token, messageId);
 
             if (emailDetails) {
                 // Extract metadata
