@@ -213,7 +213,7 @@ async function fetchEmails() {
 
                 // Validate parsed details
                 if (!parsedDetails || !parsedDetails.summary || !parsedDetails.start_time || !parsedDetails.end_time) {
-                    console.log("%cEmail has no events!", "font-size: 50px; background-color: yellow;");
+                    console.log("%cEmail has no events!", "font-size: 30px;");
                     continue; // Skip invalid event details
                 }
 
