@@ -146,6 +146,7 @@ async function fetchEmails() {
 
         // if calling for first time
         if (!firstUseTimestamp) {
+            console.log("First time fetching emails");
             saveFirstUseTimestamp();
             for (let i = 0; i < 30; i++) {
                 const id = data.messages[i].id;
@@ -153,6 +154,7 @@ async function fetchEmails() {
             }
             saveProcessedEmailIds(idsToProcess);
         } else {
+            console.log("Continuing fetching from previously searched emails")
             let searchedIds = getProcessedEmailIds();
             for (const message of data.messages) {
                 if (!searchedIds.includes(message.id)) {
@@ -374,9 +376,4 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         fetchEmails().then(() => sendResponse({ status: "Emails fetched and processed" }));
     }
     return true;
-});
-
-// Authenticate on installation
-chrome.runtime.onInstalled.addListener(() => {
-    console.log("Extension installed.");
 });
