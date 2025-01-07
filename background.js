@@ -13,6 +13,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         return true; // Keep the message channel open for asynchronous response
     }
 });
+
 function getAuthToken() {
     return new Promise((resolve, reject) => {
         chrome.identity.getAuthToken({ interactive: true }, (token) => {
@@ -226,8 +227,8 @@ async function parseEmailWithChatGPT(emailBody, sender, subject, emailDate) {
                             Return the extracted details in this format:
                             {
                               "summary": "Event Summary",
-                              "start_time": "2025-01-06T10:00:00Z",
-                              "end_time": "2025-01-06T11:00:00Z",
+                              "start_time": "YYYY-MM-DDThh:mm:ssZ",
+                              "end_time": "YYYY-MM-DDThh:mm:ssZ",
                               "location": "Event Location",
                               "sender": {
                                 "name": "Sender Name",

@@ -11,9 +11,9 @@
     "default_popup": "popup.html"
   },
   "icons": {
-    "16": "assets/filled_logo_transparent.png",
-    "48": "assets/filled_logo_transparent.png",
-    "128": "assets/filled_logo_transparent.png"
+    "16": "assets/nofill_calendar_transparent_white.png",
+    "48": "assets/nofill_calendar_transparent_white.png",
+    "128": "assets/nofill_calendar_transparent_white.png"
   },
   "oauth2": {
     "client_id": "242469590577-9hp4id5jkb8sj343dlh8dc4ub049v4th.apps.googleusercontent.com",
