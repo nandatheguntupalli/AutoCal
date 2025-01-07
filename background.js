@@ -29,13 +29,6 @@ function getFirstUseTimestamp() {
 }
 chrome.runtime.onInstalled.addListener(() => {
     console.log("Extension installed.");
-    getFirstUseTimestamp().then((timestamp) => {
-        if (!timestamp) {
-            saveFirstUseTimestamp();
-        } else {
-            console.log("First use timestamp already set:", timestamp);
-        }
-    });
 });
 
 function getAuthToken() {
@@ -139,11 +132,6 @@ async function fetchEmails() {
     const token = await getAuthToken();
     const firstUseTimestamp = await getFirstUseTimestamp();
 
-    if (!firstUseTimestamp) {
-        console.error("First use timestamp not found. Cannot filter emails.");
-        return;
-    }
-
     const response = await fetch(
         "https://www.googleapis.com/gmail/v1/users/me/messages",
         {
@@ -154,21 +142,25 @@ async function fetchEmails() {
     if (response.ok) {
         const data = await response.json();
 
+        idsToProcess = [];
 
-        // Fetch details for each email and filter by timestamp
-        const newEmails = [];
-        for (const message of data.messages) {
-            const emailDetails = await fetchEmailDetails(token, message.id);
-
-            if (emailDetails) {
-                const headers = emailDetails.payload.headers;
-                const dateHeader = headers.find((header) => header.name === "Date");
-                const emailDate = dateHeader ? new Date(dateHeader.value).toISOString() : null;
-
-                if (emailDate && emailDate > firstUseTimestamp) {
-                    newEmails.push(message);
+        // if calling for first time
+        if (!firstUseTimestamp) {
+            saveFirstUseTimestamp();
+            for (let i = 0; i < 30; i++) {
+                const id = data.messages[i].id;
+                idsToProcess.push(id);
+            }
+            saveProcessedEmailIds(idsToProcess);
+        } else {
+            let searchedIds = getProcessedEmailIds();
+            for (const message of data.messages) {
+                if (!searchedIds.includes(message.id)) {
+                    searchedIds.push(message.id);
+                    idsToProcess.push(message.id);
                 }
             }
+            saveProcessedEmailIds(searchedIds);
         }
 
         console.log("New Emails to Process:", newEmails);
