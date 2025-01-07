@@ -1,5 +1,6 @@
-// Authenticate and get access token
+POLL_INTERVAL = 60 * 1000; // 60 seconds = 1 minute
 
+// Authenticate and get access token
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.action === "fetchEmails") {
         fetchEmails()
@@ -167,6 +168,10 @@ async function fetchEmails() {
         }
 
         console.log("New email ids:", idsToProcess);
+
+        if (idsToProcess.length > 0) {
+            sendNotification(idsToProcess.length);
+        }
 
         for (const messageId of idsToProcess) {
             const emailDetails = await fetchEmailDetails(token, messageId);
@@ -378,3 +383,15 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     }
     return true;
 });
+
+function sendNotification(newEmailCount) {
+    chrome.notifications.create({
+        type: 'basic',
+        iconUrl: 'assets/nofill_calendar_transparent_white.png',
+        title: 'AutoCal - New Emails Found!',
+        message: `${newEmailCount} new email(s) found.`,
+        priority: 2,
+    });
+}
+
+setInterval(fetchEmails, POLL_INTERVAL);
