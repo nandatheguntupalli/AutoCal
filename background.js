@@ -184,6 +184,8 @@ async function fetchEmails() {
     }
 }
 
+const daysOfWeek = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+
 async function parseEmailWithChatGPT(emailBody, sender, subject, emailDate) {
     const apiKey = "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"; // Replace with your OpenAI API key
 
@@ -202,6 +204,8 @@ async function parseEmailWithChatGPT(emailBody, sender, subject, emailDate) {
     
             Email Content: "${emailBody}"\n
     
+            Current Local Date for User: ${(new Date).toString()}\n
+
             Return the extracted details in this format:\n
             {\n
                 "summary": "Event Summary",\n
@@ -229,9 +233,9 @@ async function parseEmailWithChatGPT(emailBody, sender, subject, emailDate) {
                     {
                         role: "system",
                         content: `You are an assistant that extracts event details (summary, start_time, end_time, and location) as JSON from email content. 
-        Use the provided "Email Sent Date" as the reference date for interpreting any relative dates mentioned in the email, such as "next Monday" or "this Friday". 
+        Use the provided "Current Local Date for User" as the reference date for interpreting any relative dates mentioned in the email, such as "next Monday" or "this Friday". 
         Ensure that "next Monday" means the first Monday after the reference date, even if the reference date is already a Monday. 
-        Always calculate relative dates based on the reference date provided. Extract times as accurately as possible in 24-hour ISO 8601 format (e.g., '2025-01-06T10:00:00Z' for 10:00 AM). 
+        The "Email Sent Date" is given in UTC. Extract times as accurately as possible in 24-hour ISO 8601 format (e.g., '2025-01-06T10:00:00Z' for 10:00 AM UTC). 
         If the email specifies a time range (e.g., '10am to 11am'), split it into 'start_time' and 'end_time'. 
         Always assume times are in the time zone of the sender unless specified otherwise in the email.`,
                     },
