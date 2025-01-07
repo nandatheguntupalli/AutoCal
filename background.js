@@ -152,7 +152,7 @@ async function fetchEmails() {
                 const id = data.messages[i].id;
                 idsToProcess.push(id);
             }
-            saveProcessedEmailIds(idsToProcess);
+            saveProcessedEmailIds(data.messages.map(x => x.id));
         } else {
             console.log("First use date: ", firstUseTimestamp)
             console.log("Continuing fetching from previously searched emails")
