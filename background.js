@@ -13,6 +13,30 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         return true; // Keep the message channel open for asynchronous response
     }
 });
+function saveFirstUseTimestamp() {
+    const firstUseTimestamp = new Date().toISOString();
+    chrome.storage.local.set({ firstUseTimestamp }, () => {
+        console.log("First use timestamp saved:", firstUseTimestamp);
+    });
+}
+
+function getFirstUseTimestamp() {
+    return new Promise((resolve) => {
+        chrome.storage.local.get("firstUseTimestamp", (result) => {
+            resolve(result.firstUseTimestamp || null);
+        });
+    });
+}
+chrome.runtime.onInstalled.addListener(() => {
+    console.log("Extension installed.");
+    getFirstUseTimestamp().then((timestamp) => {
+        if (!timestamp) {
+            saveFirstUseTimestamp();
+        } else {
+            console.log("First use timestamp already set:", timestamp);
+        }
+    });
+});
 
 function getAuthToken() {
     return new Promise((resolve, reject) => {
@@ -113,6 +137,13 @@ async function fetchEmailDetails(token, messageId) {
 
 async function fetchEmails() {
     const token = await getAuthToken();
+    const firstUseTimestamp = await getFirstUseTimestamp();
+
+    if (!firstUseTimestamp) {
+        console.error("First use timestamp not found. Cannot filter emails.");
+        return;
+    }
+
     const response = await fetch(
         "https://www.googleapis.com/gmail/v1/users/me/messages",
         {
@@ -124,13 +155,21 @@ async function fetchEmails() {
         const data = await response.json();
         console.log("Fetched Emails Metadata:", data);
 
-        // Get processed email IDs to avoid duplicates
-        const processedEmailIds = await getProcessedEmailIds();
+        // Fetch details for each email and filter by timestamp
+        const newEmails = [];
+        for (const message of data.messages) {
+            const emailDetails = await fetchEmailDetails(token, message.id);
 
-        // Filter new emails
-        const newEmails = data.messages.filter(
-            (message) => !processedEmailIds.includes(message.id)
-        );
+            if (emailDetails) {
+                const headers = emailDetails.payload.headers;
+                const dateHeader = headers.find((header) => header.name === "Date");
+                const emailDate = dateHeader ? new Date(dateHeader.value).toISOString() : null;
+
+                if (emailDate && emailDate > firstUseTimestamp) {
+                    newEmails.push(message);
+                }
+            }
+        }
 
         console.log("New Emails to Process:", newEmails);
 
@@ -156,7 +195,7 @@ async function fetchEmails() {
                 // Extract email body
                 let encodedBody = emailDetails.payload.body?.data;
 
-                // Fallback: Iterate through parts if the body is not in payload.body
+                // Fallback: Check parts for the body
                 if (!encodedBody && emailDetails.payload.parts) {
                     for (const part of emailDetails.payload.parts) {
                         if (part.mimeType === "text/plain" && part.body?.data) {
@@ -202,14 +241,8 @@ async function fetchEmails() {
 
                 // Create the calendar event
                 await createCalendarEvent(eventDetails);
-
-                // Add the email ID to the processed list
-                processedEmailIds.push(message.id);
             }
         }
-
-        // Save updated processed email IDs
-        saveProcessedEmailIds(processedEmailIds);
     } else {
         console.error("Error fetching emails:", response.statusText);
     }
