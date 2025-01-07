@@ -165,11 +165,11 @@ async function fetchEmails() {
                 location: parsedDetails.location || "", // Default to empty string if location is null
                 start: {
                     dateTime: parsedDetails.start_time,
-                    timeZone: "Asia/Kolkata", // Set the appropriate time zone
+                    timeZone: "UTC", // Set the appropriate time zone
                 },
                 end: {
                     dateTime: parsedDetails.end_time,
-                    timeZone: "Asia/Kolkata", // Set the appropriate time zone
+                    timeZone: "UTC", // Set the appropriate time zone
                 },
             };
 
@@ -194,7 +194,28 @@ async function parseEmailWithChatGPT(emailBody, sender, subject, emailDate) {
         console.log("Email Body Content:", emailBody);
         
         
-        
+        const gptInput = `
+            Extract event details as JSON from the following email content and metadata:\n
+            - Email Sent Date: ${emailDate}\n
+            - Sender: ${sender}\n
+            - Subject: ${subject}\n
+    
+            Email Content: "${emailBody}"\n
+    
+            Return the extracted details in this format:\n
+            {\n
+                "summary": "Event Summary",\n
+                "start_time": "YYYY-MM-DDThh:mm:ssZ",\n
+                "end_time": "YYYY-MM-DDThh:mm:ssZ",\n
+                "location": "Event Location",\n
+                "sender": {\n
+                "name": "Sender Name",\n
+                "email": "sender@example.com"\n
+                }\n
+            }
+        `;
+
+        console.log("ChatGPT Input:\n", gptInput);
 
         const response = await fetch("https://api.openai.com/v1/chat/completions", {
             method: "POST",
@@ -216,26 +237,7 @@ async function parseEmailWithChatGPT(emailBody, sender, subject, emailDate) {
                     },
                     {
                         role: "user",
-                        content: `
-                            Extract event details as JSON from the following email content and metadata:
-                            - Email Sent Date: ${emailDate}
-                            - Sender: ${sender}
-                            - Subject: ${subject}
-                    
-                            Email Content: "${emailBody}"
-                    
-                            Return the extracted details in this format:
-                            {
-                              "summary": "Event Summary",
-                              "start_time": "YYYY-MM-DDThh:mm:ssZ",
-                              "end_time": "YYYY-MM-DDThh:mm:ssZ",
-                              "location": "Event Location",
-                              "sender": {
-                                "name": "Sender Name",
-                                "email": "sender@example.com"
-                              }
-                            }
-                        `,
+                        content: gptInput
                     }
                 ],
                 response_format: { type: "json_object" },
