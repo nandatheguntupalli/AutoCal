@@ -202,7 +202,7 @@ async function fetchEmails() {
                 }
 
                 if (!encodedBody) {
-                    console.error("Encoded email body not found.");
+                    console.log("Encoded email body not found.");
                     continue; // Skip if no body is found
                 }
 
