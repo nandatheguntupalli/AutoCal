@@ -9,11 +9,13 @@
 </head>
 <body>
     <div class="container">
+        <!-- Header -->
         <div class="header">
             <div class="title">AutoCal</div>
             <div class="subtitle">Smart Email-to-Calendar Manager</div>
         </div>
-        
+
+        <!-- Fetch Emails Button -->
         <div class="button-group">
             <button class="button" id="fetchEmailsButton">
                 <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#e8eaed">
@@ -23,11 +25,15 @@
             </button>
         </div>
 
+        <!-- Status Message -->
         <div class="status" id="statusMessage">Waiting for user action...</div>
 
-        <div class="bookmarks">
-            <div class="bookmarks-title">Fetched Emails</div>
-            <ul id="emailsList"></ul>
+        <!-- Pending Events -->
+        <div class="pending-events">
+            <div class="pending-events-title">Pending Calendar Events</div>
+            <ul id="eventList">
+                <!-- Dynamic content: Pending events will appear here -->
+            </ul>
         </div>
     </div>
     <script type="module" src="popup.js"></script>

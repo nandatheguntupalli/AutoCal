@@ -135,3 +135,96 @@ body {
 #emailsList li:last-child {
   border-bottom: none;
 }
+
+/* Pending Events Section */
+.pending-events {
+  background-color: #f9fafb;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 16px;
+  margin-top: 20px;
+  max-height: 180px;
+  overflow-y: auto;
+}
+
+.pending-events-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--font-color);
+  margin-bottom: 12px;
+}
+
+.pending-events::-webkit-scrollbar {
+  width: 6px;
+}
+
+.pending-events::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 3px;
+}
+
+.pending-events::-webkit-scrollbar-thumb {
+  background-color: #cbd5e1;
+  border-radius: 3px;
+}
+
+/* Individual Event */
+.event {
+  background: #ffffff;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 12px;
+  box-shadow: var(--card-shadow);
+}
+
+.event textarea {
+  width: calc(100% - 20px);
+  padding: 8px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  margin-bottom: 8px;
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  color: var(--font-color);
+  resize: none;
+}
+
+.event textarea:focus {
+  outline: 2px solid var(--primary-color);
+}
+
+.event .button-group {
+  display: flex;
+  justify-content: space-between;
+}
+
+.event button.approve {
+  background-color: #4caf50;
+  color: #ffffff;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.event button.approve:hover {
+  background-color: #388e3c;
+}
+
+.event button.reject {
+  background-color: #f44336;
+  color: #ffffff;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.event button.reject:hover {
+  background-color: #d32f2f;
+}
