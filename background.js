@@ -154,8 +154,9 @@ async function fetchEmails() {
             }
             saveProcessedEmailIds(idsToProcess);
         } else {
+            console.log("First use date: ", firstUseTimestamp)
             console.log("Continuing fetching from previously searched emails")
-            let searchedIds = getProcessedEmailIds();
+            let searchedIds = await getProcessedEmailIds();
             for (const message of data.messages) {
                 if (!searchedIds.includes(message.id)) {
                     searchedIds.push(message.id);
