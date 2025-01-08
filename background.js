@@ -1,6 +1,5 @@
 POLL_INTERVAL = 30 * 1000; // 30 seconds
 
-// Authenticate and get access token
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.action === "fetchEmails") {
         fetchEmails()
@@ -14,6 +13,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         return true; // Keep the message channel open for asynchronous response
     }
 });
+
 function saveFirstUseTimestamp() {
     const firstUseTimestamp = new Date().toISOString();
     chrome.storage.local.set({ firstUseTimestamp }, () => {
@@ -28,6 +28,7 @@ function getFirstUseTimestamp() {
         });
     });
 }
+
 chrome.runtime.onInstalled.addListener(() => {
     console.log("Extension installed.");
 });
@@ -107,6 +108,7 @@ function getProcessedEmailIds() {
         });
     });
 }
+
 // Fetch email details
 async function fetchEmailDetails(token, messageId) {
     try {
@@ -383,14 +385,6 @@ async function createCalendarEvent(eventDetails) {
         console.error("Unexpected error in createCalendarEvent:", error);
     }
 }
-
-// Listen for messages
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    if (request.action === "fetchEmails") {
-        fetchEmails().then(() => sendResponse({ status: "Emails fetched and processed" }));
-    }
-    return true;
-});
 
 setInterval(fetchEmails, POLL_INTERVAL);
 fetchEmails();
