@@ -250,6 +250,29 @@ body {
     transition: background 0.2s ease;
 }
 
+.event-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.email-icon {
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--gray-dark);
+  margin-left: 8px;
+  font-size: 24px; /* Adjust size as needed */
+  cursor: pointer;
+  transition: color 0.3s ease;
+}
+
+.email-icon:hover {
+  color: var(--primary-color);
+}
+
 .fetch-button:hover {
     background: var(--primary-hover);
 }

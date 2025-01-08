@@ -87,19 +87,24 @@ async function loadPendingEvents() {
         };
 
         card.innerHTML = `
-            <div class="event-title" contenteditable="true">${event.summary}</div>
+            <div class="event-header">
+                <div class="event-title" contenteditable="true">${event.summary}</div>
+                <a href="${event.emailLink}" target="_blank" class="email-icon" title="View Original Email">
+                    <span class="material-symbols-outlined">outgoing_mail</span>
+                </a>
+            </div>
             <div class="event-details">
                 <span class="detail-label">Date:</span>
                 <input type="date" class="detail-input date-input" 
-                       value="${formatDateForInput(startDate)}">
+                    value="${formatDateForInput(startDate)}">
                 
                 <span class="detail-label">Start Time:</span>
-                    <input type="time" class="detail-input time-input start-time" 
-                           value="${formatTimeForInput(startDate)}">
+                <input type="time" class="detail-input time-input start-time" 
+                    value="${formatTimeForInput(startDate)}">
                 
                 <span class="detail-label">End Time:</span>
-                    <input type="time" class="detail-input time-input end-time" 
-                           value="${formatTimeForInput(endDate)}">
+                <input type="time" class="detail-input time-input end-time" 
+                    value="${formatTimeForInput(endDate)}">
                 <span class="duration-display">
                     ${calculateDuration(startDate, endDate)}
                 </span>
@@ -107,8 +112,8 @@ async function loadPendingEvents() {
             <div class="event-location">
                 <span class="detail-label">Location:</span>
                 <input type="text" class="location-input" 
-                       value="${event.location || ''}" 
-                       placeholder="Add location">
+                    value="${event.location || ''}" 
+                    placeholder="Add location">
             </div>
             <div class="event-actions">
                 <button class="event-button approve-button">

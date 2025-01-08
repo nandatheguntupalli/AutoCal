@@ -186,9 +186,12 @@ async function fetchEmails() {
                 const dateHeader = headers.find((header) => header.name === "Date");
                 const emailDate = dateHeader ? new Date(dateHeader.value).toISOString() : null;
 
+                const emailLink = `https://mail.google.com/mail/u/0/#inbox/${messageId}`;
+
                 console.log("Sender:", sender);
                 console.log("Subject:", subject);
                 console.log("Email Date:", emailDate);
+                console.log("Email Link:", emailLink);
 
                 // Extract email body
                 let encodedBody = emailDetails.payload.body?.data;
@@ -232,6 +235,7 @@ async function fetchEmails() {
                         dateTime: parsedDetails.end_time.slice(0, -1),
                         timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone, // Set the appropriate time zone
                     },
+                    emailLink: emailLink,
                 };
 
                 // Log the transformed event details for debugging
