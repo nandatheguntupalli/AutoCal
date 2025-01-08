@@ -23,61 +23,185 @@ async function loadPendingEvents() {
         chrome.storage.local.get("pendingEvents", (result) => resolve(result.pendingEvents || []))
     );
 
-    eventList.innerHTML = ""; // Clear existing content
+    eventList.innerHTML = "";
 
     if (events.length === 0) {
-        eventList.innerHTML = "<li>No pending events to review.</li>";
+        const emptyState = document.createElement("div");
+        emptyState.className = "empty-state";
+        emptyState.innerHTML = `
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240">
+            <!-- Checkmark -->
+            <path d="M80 120 L110 150 L170 90" 
+                    stroke="#4CAF50" 
+                    stroke-width="12" 
+                    stroke-linecap="round" 
+                    stroke-linejoin="round" 
+                    fill="none"/>
+            </svg>
+        `
+        eventList.appendChild(emptyState);
         return;
     }
 
     events.forEach((event, index) => {
-        const listItem = document.createElement("li");
-        listItem.className = "event-item";
+        const card = document.createElement("div");
+        card.className = "event-card";
 
-        // Format date and time
-        const formatDateTime = (dateTime) => {
-            const date = new Date(dateTime);
-            const options = {
-                weekday: "short", // Short form for the day of the week
-                month: "numeric",
-                day: "numeric",
-                year: "2-digit",
-            };
-            const timeOptions = {
-                hour: "numeric",
-                minute: "2-digit",
-                hour12: true,
-            };
+        // Convert dates to local timezone
+        const startDate = new Date(event.start.dateTime);
+        const endDate = new Date(event.end.dateTime);
 
-            const formattedDate = date.toLocaleDateString("en-US", options); // e.g., "Tue, 1/14/25"
-            const formattedTime = date.toLocaleTimeString("en-US", timeOptions); // e.g., "10:00 AM"
-            return { formattedDate, formattedTime };
+        // Format date for input values
+        const formatDateForInput = (date) => {
+            return date.toISOString().split('T')[0];
         };
 
-        const start = formatDateTime(event.start.dateTime);
-        const end = formatDateTime(event.end.dateTime);
+        // Format date for display
+        const formatDateForDisplay = (date) => {
+            return date.toLocaleDateString('en-US', {
+                weekday: 'short',
+                month: '2-digit',
+                day: '2-digit',
+                year: 'numeric'
+            });
+        };
 
-        listItem.innerHTML = `
-            <div contenteditable="true" class="event-summary">${event.summary || "No Title"}</div>
+        // Format time for input values
+        const formatTimeForInput = (date) => {
+            return date.toTimeString().slice(0, 5);
+        };
+
+        // Calculate duration
+        const calculateDuration = (start, end) => {
+            const diff = end - start;
+            const hours = Math.floor(diff / (1000 * 60 * 60));
+            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            
+            if (hours === 0) {
+                return `${minutes} minutes`;
+            } else if (minutes === 0) {
+                return `${hours} hour${hours !== 1 ? 's' : ''}`;
+            } else {
+                return `${hours} hour${hours !== 1 ? 's' : ''} ${minutes} minute${minutes !== 1 ? 's' : ''}`;
+            }
+        };
+
+        card.innerHTML = `
+            <div class="event-title" contenteditable="true">${event.summary}</div>
             <div class="event-details">
-                <span contenteditable="true">${start.formattedDate} from ${start.formattedTime} to ${end.formattedTime}</span><br>
-                <span contenteditable="true">Location: ${event.location || "No location"}</span>
+                <span class="detail-label">Date:</span>
+                <input type="date" class="detail-input date-input" 
+                       value="${formatDateForInput(startDate)}">
+                
+                <span class="detail-label">Start Time:</span>
+                    <input type="time" class="detail-input time-input start-time" 
+                           value="${formatTimeForInput(startDate)}">
+                
+                <span class="detail-label">End Time:</span>
+                    <input type="time" class="detail-input time-input end-time" 
+                           value="${formatTimeForInput(endDate)}">
+                <span class="duration-display">
+                    ${calculateDuration(startDate, endDate)}
+                </span>
             </div>
-            <button class="approve-button" data-index="${index}">✔ Approve</button>
-            <button class="reject-button" data-index="${index}">✘ Reject</button>
+            <div class="event-location">
+                <span class="detail-label">Location:</span>
+                <input type="text" class="location-input" 
+                       value="${event.location || ''}" 
+                       placeholder="Add location">
+            </div>
+            <div class="event-actions">
+                <button class="event-button approve-button">
+                    <span>✔</span>Approve
+                </button>
+                <button class="event-button reject-button">
+                    <span>✘</span>Reject
+                </button>
+            </div>
         `;
 
-        // Approve event
-        listItem.querySelector(".approve-button").addEventListener("click", () => {
+        // Add event listeners for date/time changes
+        const dateInput = card.querySelector('.date-input');
+        const startTimeInput = card.querySelector('.start-time');
+        const endTimeInput = card.querySelector('.end-time');
+        const locationInput = card.querySelector('.location-input');
+        const titleElement = card.querySelector('.event-title');
+        const durationDisplay = card.querySelector('.duration-display');
+
+        // Function to validate and update times
+        const validateAndUpdateTimes = () => {
+            const date = dateInput.value;
+            const startTime = startTimeInput.value;
+            const endTime = endTimeInput.value;
+
+            const startDateTime = new Date(`${date}T${startTime}`);
+            const endDateTime = new Date(`${date}T${endTime}`);
+
+            // Remove any existing error messages
+            const existingError = card.querySelector('.error-message');
+            if (existingError) {
+                existingError.remove();
+            }
+
+            // Reset styles
+            endTimeInput.classList.remove('invalid-time');
+
+            if (endDateTime <= startDateTime) {
+                endTimeInput.classList.add('invalid-time');
+                return false;
+            }
+
+            // Update duration display
+            durationDisplay.textContent = `${calculateDuration(startDateTime, endDateTime)}`;
+            return true;
+        };
+
+        // Update event object when inputs change
+        const updateEventDateTime = () => {
+            const newDate = dateInput.value;
+            const newStartTime = startTimeInput.value;
+            const newEndTime = endTimeInput.value;
+
+            if (!validateAndUpdateTimes()) {
+                return;
+            }
+
+            // Create new DateTime strings
+            const newStartDateTime = `${newDate}T${newStartTime}:00`;
+            const newEndDateTime = `${newDate}T${newEndTime}:00`;
+
+            // Update the event object
+            events[index].start.dateTime = newStartDateTime;
+            events[index].end.dateTime = newEndDateTime;
+            chrome.storage.local.set({ pendingEvents: events });
+        };
+
+        dateInput.addEventListener('change', updateEventDateTime);
+        startTimeInput.addEventListener('change', updateEventDateTime);
+        endTimeInput.addEventListener('change', updateEventDateTime);
+
+        // Update location
+        locationInput.addEventListener('change', () => {
+            events[index].location = locationInput.value;
+            chrome.storage.local.set({ pendingEvents: events });
+        });
+
+        // Update title
+        titleElement.addEventListener('blur', () => {
+            events[index].summary = titleElement.textContent;
+            chrome.storage.local.set({ pendingEvents: events });
+        });
+
+        // Approve/Reject handlers
+        card.querySelector('.approve-button').addEventListener('click', () => {
             approveEvent(index, events);
         });
 
-        // Reject event
-        listItem.querySelector(".reject-button").addEventListener("click", () => {
+        card.querySelector('.reject-button').addEventListener('click', () => {
             rejectEvent(index, events);
         });
 
-        eventList.appendChild(listItem);
+        eventList.appendChild(card);
     });
 }
 
