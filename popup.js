@@ -112,7 +112,7 @@ async function loadPendingEvents() {
             </div>
             <div class="event-actions">
                 <button class="event-button approve-button">
-                    <span>✔</span>Approve
+                    <span>✔</span>Accept
                 </button>
                 <button class="event-button reject-button">
                     <span>✘</span>Reject
