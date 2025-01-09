@@ -13,7 +13,7 @@ CHATGPT_API_KEY = os.getenv("CHATGPT_API_KEY")
 if not CHATGPT_API_KEY:
     raise ValueError("ChatGPT API Key Not Found")
 
-@app.route('/chatgpt', methods=["POST", "OPTIONS"])
+@app.route('/autocal/chatgpt', methods=["POST", "OPTIONS"])
 def proxy():
     if request.method == 'OPTIONS':
         return '', 204
