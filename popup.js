@@ -53,22 +53,20 @@ async function loadPendingEvents() {
 
         // Format date for input values
         const formatDateForInput = (date) => {
-            return date.toISOString().split('T')[0];
-        };
-
-        // Format date for display
-        const formatDateForDisplay = (date) => {
-            return date.toLocaleDateString('en-US', {
-                weekday: 'short',
-                month: '2-digit',
-                day: '2-digit',
-                year: 'numeric'
-            });
+            try {
+                return date.toISOString().split('T')[0];
+            } catch (RangeError) {
+                return "";
+            }
         };
 
         // Format time for input values
         const formatTimeForInput = (date) => {
-            return date.toTimeString().slice(0, 5);
+            let s = date.toTimeString().slice(0, 5);
+            if (s === "Inval") {
+                return "";
+            }
+            return s;
         };
 
         // Calculate duration
@@ -77,6 +75,14 @@ async function loadPendingEvents() {
             const hours = Math.floor(diff / (1000 * 60 * 60));
             const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
             
+            if (hours === 23 && minutes === 59) {
+                return "all day";
+            }
+
+            if (isNaN(hours) || isNaN(minutes)) {
+                return "";
+            }
+
             if (hours === 0) {
                 return `${minutes} minutes`;
             } else if (minutes === 0) {
@@ -100,11 +106,11 @@ async function loadPendingEvents() {
                 
                 <span class="detail-label">Start Time:</span>
                 <input type="time" class="detail-input time-input start-time" 
-                    value="${formatTimeForInput(startDate)}">
+                    value="${formatTimeForInput(startDate)}" step=900>
                 
                 <span class="detail-label">End Time:</span>
                 <input type="time" class="detail-input time-input end-time" 
-                    value="${formatTimeForInput(endDate)}">
+                    value="${formatTimeForInput(endDate)}" step=900>
                 <span class="duration-display">
                     ${calculateDuration(startDate, endDate)}
                 </span>
@@ -142,22 +148,22 @@ async function loadPendingEvents() {
             const startDateTime = new Date(`${date}T${startTime}`);
             const endDateTime = new Date(`${date}T${endTime}`);
 
-            // Remove any existing error messages
-            const existingError = card.querySelector('.error-message');
-            if (existingError) {
-                existingError.remove();
-            }
-
             // Reset styles
+            startTimeInput.classList.remove('invalid-time');
             endTimeInput.classList.remove('invalid-time');
-
-            if (endDateTime <= startDateTime) {
+            
+            if (startTime == "" || endTime == "") {
+                if (startTime == "") startTimeInput.classList.add("invalid-time");
+                if (endTime == "") endTimeInput.classList.add("invalid-time");
+                return false;
+            } else if (endDateTime <= startDateTime) {
                 endTimeInput.classList.add('invalid-time');
                 return false;
             }
 
             // Update duration display
-            durationDisplay.textContent = `${calculateDuration(startDateTime, endDateTime)}`;
+            const duration = calculateDuration(startDateTime, endDateTime);
+            durationDisplay.textContent = `${duration}`;
             return true;
         };
 
