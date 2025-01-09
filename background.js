@@ -263,17 +263,26 @@ async function parseEmailWithChatGPT(emailBody, sender, subject, emailDate) {
             hour12: false
         });
         const localDate = new Date(localDateString);
-        const formattedLocalDate = localDate.toISOString();
-        
+        // const formattedLocalDate = localDate.toISOString();
+        const formattedLocalDate = dateObjUTC.toLocaleString("en-US", {
+            hour12: false, 
+            weekday: "long", 
+            year: "numeric", 
+            day: "numeric", 
+            month: "numeric", 
+            hour: "numeric", 
+            minute: "numeric"
+        });
+
         console.log("Email Sender:", sender);
         console.log("Email Date:", formattedLocalDate);
         console.log("Email Body Content:", emailBody);
         
         const gptInput = `
-            Email Received Date: ${formattedLocalDate}\n
-            Sender: ${sender}\n
-            Subject: ${subject}\n
-            Email Content: "${emailBody}"\n
+        Email Received Date: ${formattedLocalDate}\n
+        Sender: ${sender}\n
+        Subject: ${subject}\n
+        Email Content: "${emailBody}"\n
         `;
 
         console.log("ChatGPT Input:\n", gptInput);
@@ -291,13 +300,15 @@ async function parseEmailWithChatGPT(emailBody, sender, subject, emailDate) {
                         role: "system",
                         content: `
                         You are an assistant that extracts event details (summary, start_time, end_time, and location) as JSON from email content. You will be given the email data in the following format, where things in {} represent a variable:
-                        \n-- Start of Input –-\n
-                        Email Received Date: {The date and time the email was received by the user, given in the user’s local timezone}\n
+                        \n-- Start of Input --\n
+                        Email Received Date: {The date and time the email was received by the user, given in the user's local timezone}\n
                         Sender: {The email address of the user that sent the email}\n
                         Subject: {The subject line of the email}\n
                         Email Content: "{The actual text inside the body of the email}"\n
-                        -- End of Input –-\n
-                        You should extract the summary of the event from the email body and subject line. Find the start_time and end_time by looking through the email body and subject line. The start_time and end_time are assumed to be in the user's local time zone. If a relative date (e.g., "this Friday") is mentioned, calculate the exact date using the "Current Local Date for User" line as a reference. For example, if the email says "this Friday" and today is Monday, then **this Friday** should be the next Friday in the calendar, not the previous Friday. If there is no specific end time mentioned, the default length of the event should be 1 hour. Finally, when returning the start_time and end_time, format these in the ISO format, which matches the format of the input. If no location is mentioned, leave the location field blank.
+                        -- End of Input --\n
+                        You should extract the summary of the event from the email body and subject line. Find the start_time and end_time by looking through the email body and subject line. The start_time and end_time are assumed to be in the user's local time zone. If a relative date (e.g., "this Friday") is mentioned, calculate the exact date using the "Email Received Date" line as a reference. For example, if the email says "this Friday" and today is Monday, then **this Friday** should be the next Friday in the calendar, not the previous Friday. If there is no specific end time mentioned, the default length of the event should be 1 hour. 
+                        Additionally, if the event is an all-day event, make the start_time 12:00am and end_time 11:59pm.
+                        Finally, when returning the start_time and end_time, format these in the ISO format, which is shown below. If no location is mentioned, leave the location field blank.
                         If there is no event mentioned, set everything to null. Do not create an event for every email that is sent only the ones that specifically talk about an event that is happening.\n
                         Return the extracted details in this format:\n
                         {\n
