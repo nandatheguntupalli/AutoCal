@@ -253,8 +253,6 @@ async function fetchEmails() {
 const daysOfWeek = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
 async function parseEmailWithChatGPT(emailBody, sender, subject, emailDate) {
-    const apiKey = "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"; // Replace with your OpenAI API key
-
     try {
         // Send a POST request to the OpenAI API
         const dateObjUTC = new Date(emailDate);
@@ -287,11 +285,11 @@ async function parseEmailWithChatGPT(emailBody, sender, subject, emailDate) {
 
         console.log("ChatGPT Input:\n", gptInput);
 
-        const response = await fetch("https://api.openai.com/v1/chat/completions", {
+        const response = await fetch("https://maxvek.com/autocal/chatgpt", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
-                Authorization: `Bearer ${apiKey}`,
+                // Authorization: `Bearer ${apiKey}`,
             },
             body: JSON.stringify({
                 model: "gpt-4o-mini",
