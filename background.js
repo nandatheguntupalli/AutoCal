@@ -214,35 +214,37 @@ async function fetchEmails() {
                 const emailBody = decodeBase64(encodedBody);
 
                 // Pass the email body and metadata to ChatGPT for parsing
-                const parsedDetails = await parseEmailWithChatGPT(emailBody, sender, subject, emailDate);
-                console.log("Parsed Event Details:", parsedDetails);
+                const parsedDetailsList = await parseEmailWithChatGPT(emailBody, sender, subject, emailDate);
+                console.log("Parsed Event Details:", parsedDetailsList.events);
 
                 // Validate parsed details
-                if (!parsedDetails || !parsedDetails.summary || !parsedDetails.start_time || !parsedDetails.end_time) {
+
+                if (parsedDetailsList.events.length === 0) {
                     console.log("%cEmail has no events!", "font-size: 30px;");
-                    continue; // Skip invalid event details
+                    continue;
                 }
+                for (let i = 0; i < parsedDetailsList.events.length; i++) {
+                    const parsedDetails = parsedDetailsList.events[i];
+                    const eventDetails = {
+                        summary: parsedDetails.summary,
+                        location: parsedDetails.location || "", // Default to empty string if location is null
+                        start: {
+                            dateTime: parsedDetails.start_time.slice(0, -1),
+                            timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone, // Set the appropriate time zone
+                        },
+                        end: {
+                            dateTime: parsedDetails.end_time.slice(0, -1),
+                            timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone, // Set the appropriate time zone
+                        },
+                        emailLink: emailLink,
+                    };
+                    
+                    // Log the transformed event details for debugging
+                    console.log("Event Details Sent to Google Calendar API:", eventDetails);
 
-                // Transform parsed details into the required format for createCalendarEvent
-                const eventDetails = {
-                    summary: parsedDetails.summary,
-                    location: parsedDetails.location || "", // Default to empty string if location is null
-                    start: {
-                        dateTime: parsedDetails.start_time.slice(0, -1),
-                        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone, // Set the appropriate time zone
-                    },
-                    end: {
-                        dateTime: parsedDetails.end_time.slice(0, -1),
-                        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone, // Set the appropriate time zone
-                    },
-                    emailLink: emailLink,
-                };
-
-                // Log the transformed event details for debugging
-                console.log("Event Details Sent to Google Calendar API:", eventDetails);
-
-                // Create the calendar event
-                await queueCalendarEvent(eventDetails);
+                    // Create the calendar event
+                    await queueCalendarEvent(eventDetails);
+                }
             }
         }
     } else {
@@ -307,8 +309,11 @@ async function parseEmailWithChatGPT(emailBody, sender, subject, emailDate) {
                         You should extract the summary of the event from the email body and subject line. Find the start_time and end_time by looking through the email body and subject line. The start_time and end_time are assumed to be in the user's local time zone. If a relative date (e.g., "this Friday") is mentioned, calculate the exact date using the "Email Received Date" line as a reference. For example, if the email says "this Friday" and today is Monday, then **this Friday** should be the next Friday in the calendar, not the previous Friday. If there is no specific end time mentioned, the default length of the event should be 1 hour. 
                         Additionally, if the event is an all-day event, make the start_time 12:00am and end_time 11:59pm.
                         Finally, when returning the start_time and end_time, format these in the ISO format, which is shown below. If no location is mentioned, leave the location field blank.
-                        If there is no event mentioned, set everything to null. Do not create an event for every email that is sent only the ones that specifically talk about an event that is happening.\n
+                        If there are multiple events explicity stated in the email, add each one to the list in the output, matches to the key "events".
+                        If there is no event mentioned, return an empty list for "events". Do not create an event for every email that is sent only the ones that specifically talk about an event that is happening.\n
                         Return the extracted details in this format:\n
+                        {\n
+                        events: [\n
                         {\n
                         "summary": "Event Summary",\n
                         "start_time": "YYYY-MM-DDThh:mm:ssZ",\n
@@ -318,6 +323,8 @@ async function parseEmailWithChatGPT(emailBody, sender, subject, emailDate) {
                         "name": "Sender Name",\n
                         "email": "sender@example.com"\n
                         }\n
+                        }\n
+                        ]\n
                         }
                         `
                     },
