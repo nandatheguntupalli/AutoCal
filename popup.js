@@ -106,11 +106,11 @@ async function loadPendingEvents() {
                 
                 <span class="detail-label">Start Time:</span>
                 <input type="time" class="detail-input time-input start-time" 
-                    value="${formatTimeForInput(startDate)}" step=900>
+                    value="${formatTimeForInput(startDate)}">
                 
                 <span class="detail-label">End Time:</span>
                 <input type="time" class="detail-input time-input end-time" 
-                    value="${formatTimeForInput(endDate)}" step=900>
+                    value="${formatTimeForInput(endDate)}">
                 <span class="duration-display">
                     ${calculateDuration(startDate, endDate)}
                 </span>
