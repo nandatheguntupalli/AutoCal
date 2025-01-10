@@ -296,7 +296,6 @@ body {
 .fetch-button {
     width: 100%;
     padding: 12px;
-    /* background: var(--primary-color); */
     background: var(--primary-color);
     border: none;
     border-radius: 8px;
@@ -330,8 +329,7 @@ body {
 }
 
 .fetch-button:hover {
-    /* background: var(--primary-hover); */
-    background: var(--gray-light);
+    background: var(--primary-hover);
 }
 
 ::-webkit-scrollbar {
