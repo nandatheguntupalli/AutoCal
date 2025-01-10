@@ -1,20 +1,23 @@
-import React from "react";
-import Header from "./components/Header";
-import EventCard from "./components/EventCard";
+const updateEvent = (index, updatedEvent) => {
+  const updatedEvents = [...events];
+  updatedEvents[index] = updatedEvent;
 
-const App = () => {
-  const sampleEvent = { title: "Sample Event", date: "2025-01-01" };
+  setEvents(updatedEvents);
 
-  return (
-    <div className="popup-container">
-      <Header />
-      <div className="events-container">
-        {/* Add multiple EventCards dynamically */}
-        <EventCard event={sampleEvent} />
-        <EventCard event={sampleEvent} />
-      </div>
-    </div>
-  );
+  // Update chrome.storage.local
+  chrome.storage.local.set({ pendingEvents: updatedEvents }, () => {
+    console.log("Event approved and updated:", updatedEvent);
+  });
 };
 
-export default App;
+const rejectEvent = (index) => {
+  const updatedEvents = [...events];
+  const [removedEvent] = updatedEvents.splice(index, 1); // Remove the event
+
+  setEvents(updatedEvents);
+
+  // Update chrome.storage.local
+  chrome.storage.local.set({ pendingEvents: updatedEvents }, () => {
+    console.log("Event rejected and removed:", removedEvent);
+  });
+};
