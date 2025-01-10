@@ -122,11 +122,11 @@ async function loadPendingEvents() {
                     placeholder="Add location">
             </div>
             <div class="event-actions">
-                <button class="event-button approve-button">
-                    <span>✔</span>Accept
-                </button>
                 <button class="event-button reject-button">
                     <span>✘</span>Reject
+                </button>
+                <button class="event-button approve-button">
+                    <span>✔</span>Accept
                 </button>
             </div>
         `;
