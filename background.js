@@ -1,6 +1,5 @@
 POLL_INTERVAL = 30 * 1000; // 30 seconds
 
-// Authenticate and get access token
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.action === "fetchEmails") {
         fetchEmails()
@@ -14,6 +13,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         return true; // Keep the message channel open for asynchronous response
     }
 });
+
 function saveFirstUseTimestamp() {
     const firstUseTimestamp = new Date().toISOString();
     chrome.storage.local.set({ firstUseTimestamp }, () => {
@@ -28,6 +28,7 @@ function getFirstUseTimestamp() {
         });
     });
 }
+
 chrome.runtime.onInstalled.addListener(() => {
     console.log("Extension installed.");
 });
@@ -107,6 +108,7 @@ function getProcessedEmailIds() {
         });
     });
 }
+
 // Fetch email details
 async function fetchEmailDetails(token, messageId) {
     try {
@@ -184,9 +186,12 @@ async function fetchEmails() {
                 const dateHeader = headers.find((header) => header.name === "Date");
                 const emailDate = dateHeader ? new Date(dateHeader.value).toISOString() : null;
 
+                const emailLink = `https://mail.google.com/mail/u/0/#inbox/${messageId}`;
+
                 console.log("Sender:", sender);
                 console.log("Subject:", subject);
                 console.log("Email Date:", emailDate);
+                console.log("Email Link:", emailLink);
 
                 // Extract email body
                 let encodedBody = emailDetails.payload.body?.data;
@@ -202,41 +207,44 @@ async function fetchEmails() {
                 }
 
                 if (!encodedBody) {
-                    console.error("Encoded email body not found.");
+                    console.log("Encoded email body not found.");
                     continue; // Skip if no body is found
                 }
 
                 const emailBody = decodeBase64(encodedBody);
 
                 // Pass the email body and metadata to ChatGPT for parsing
-                const parsedDetails = await parseEmailWithChatGPT(emailBody, sender, subject, emailDate);
-                console.log("Parsed Event Details:", parsedDetails);
+                const parsedDetailsList = await parseEmailWithChatGPT(emailBody, sender, subject, emailDate);
+                console.log("Parsed Event Details:", parsedDetailsList.events);
 
                 // Validate parsed details
-                if (!parsedDetails || !parsedDetails.summary || !parsedDetails.start_time || !parsedDetails.end_time) {
+
+                if (parsedDetailsList.events.length === 0) {
                     console.log("%cEmail has no events!", "font-size: 30px;");
-                    continue; // Skip invalid event details
+                    continue;
                 }
+                for (let i = 0; i < parsedDetailsList.events.length; i++) {
+                    const parsedDetails = parsedDetailsList.events[i];
+                    const eventDetails = {
+                        summary: parsedDetails.summary,
+                        location: parsedDetails.location || "", // Default to empty string if location is null
+                        start: {
+                            dateTime: parsedDetails.start_time.slice(0, -1),
+                            timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone, // Set the appropriate time zone
+                        },
+                        end: {
+                            dateTime: parsedDetails.end_time.slice(0, -1),
+                            timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone, // Set the appropriate time zone
+                        },
+                        emailLink: emailLink,
+                    };
+                    
+                    // Log the transformed event details for debugging
+                    console.log("Event Details Sent to Google Calendar API:", eventDetails);
 
-                // Transform parsed details into the required format for createCalendarEvent
-                const eventDetails = {
-                    summary: parsedDetails.summary,
-                    location: parsedDetails.location || "", // Default to empty string if location is null
-                    start: {
-                        dateTime: parsedDetails.start_time.slice(0, -1),
-                        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone, // Set the appropriate time zone
-                    },
-                    end: {
-                        dateTime: parsedDetails.end_time.slice(0, -1),
-                        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone, // Set the appropriate time zone
-                    },
-                };
-
-                // Log the transformed event details for debugging
-                console.log("Event Details Sent to Google Calendar API:", eventDetails);
-
-                // Create the calendar event
-                await createCalendarEvent(eventDetails);
+                    // Create the calendar event
+                    await queueCalendarEvent(eventDetails);
+                }
             }
         }
     } else {
@@ -247,8 +255,6 @@ async function fetchEmails() {
 const daysOfWeek = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
 async function parseEmailWithChatGPT(emailBody, sender, subject, emailDate) {
-    const apiKey = "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"; // Replace with your OpenAI API key
-
     try {
         // Send a POST request to the OpenAI API
         const dateObjUTC = new Date(emailDate);
@@ -257,26 +263,35 @@ async function parseEmailWithChatGPT(emailBody, sender, subject, emailDate) {
             hour12: false
         });
         const localDate = new Date(localDateString);
-        const formattedLocalDate = localDate.toISOString();
-        
+        // const formattedLocalDate = localDate.toISOString();
+        const formattedLocalDate = dateObjUTC.toLocaleString("en-US", {
+            hour12: false, 
+            weekday: "long", 
+            year: "numeric", 
+            day: "numeric", 
+            month: "numeric", 
+            hour: "numeric", 
+            minute: "numeric"
+        });
+
         console.log("Email Sender:", sender);
         console.log("Email Date:", formattedLocalDate);
         console.log("Email Body Content:", emailBody);
         
         const gptInput = `
-            Email Received Date: ${formattedLocalDate}\n
-            Sender: ${sender}\n
-            Subject: ${subject}\n
-            Email Content: "${emailBody}"\n
+        Email Received Date: ${formattedLocalDate}\n
+        Sender: ${sender}\n
+        Subject: ${subject}\n
+        Email Content: "${emailBody}"\n
         `;
 
         console.log("ChatGPT Input:\n", gptInput);
 
-        const response = await fetch("https://api.openai.com/v1/chat/completions", {
+        const response = await fetch("https://maxvek.com/autocal/chatgpt", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
-                Authorization: `Bearer ${apiKey}`,
+                // Authorization: `Bearer ${apiKey}`,
             },
             body: JSON.stringify({
                 model: "gpt-4o-mini",
@@ -285,15 +300,20 @@ async function parseEmailWithChatGPT(emailBody, sender, subject, emailDate) {
                         role: "system",
                         content: `
                         You are an assistant that extracts event details (summary, start_time, end_time, and location) as JSON from email content. You will be given the email data in the following format, where things in {} represent a variable:
-                        \n-- Start of Input –-\n
-                        Email Received Date: {The date and time the email was received by the user, given in the user’s local timezone}\n
+                        \n-- Start of Input --\n
+                        Email Received Date: {The date and time the email was received by the user, given in the user's local timezone}\n
                         Sender: {The email address of the user that sent the email}\n
                         Subject: {The subject line of the email}\n
                         Email Content: "{The actual text inside the body of the email}"\n
-                        -- End of Input –-\n
-                        You should extract the summary of the event from the email body. Find the start_time and end_time by looking through the email body. The start_time and end_time are assumed to be in the user's local time zone. If a relative date (e.g., "this Friday") is mentioned, calculate the exact date using the "Current Local Date for User" line as a reference. For example, if the email says "this Friday" and today is Monday, then **this Friday** should be the next Friday in the calendar, not the previous Friday. If there is no specific end time mentioned, the default length of the event should be 1 hour. Finally, when returning the start_time and end_time, format these in the ISO format, which matches the format of the input. If no location is mentioned, leave the location field blank.
-                        If there is no event mentioned, set everything to null. Do not create an event for every email that is sent only the ones that specifically talk about an event that is happening.\n
+                        -- End of Input --\n
+                        You should extract the summary of the event from the email body and subject line. Find the start_time and end_time by looking through the email body and subject line. The start_time and end_time are assumed to be in the user's local time zone. If a relative date (e.g., "this Friday") is mentioned, calculate the exact date using the "Email Received Date" line as a reference. For example, if the email says "this Friday" and today is Monday, then **this Friday** should be the next Friday in the calendar, not the previous Friday. If there is no specific end time mentioned, the default length of the event should be 1 hour. 
+                        Additionally, if the event is an all-day event, make the start_time 12:00am and end_time 11:59pm.
+                        Finally, when returning the start_time and end_time, format these in the ISO format, which is shown below. If no location is mentioned, leave the location field blank.
+                        If there are multiple events explicity stated in the email, add each one to the list in the output, matches to the key "events".
+                        If there is no event mentioned, return an empty list for "events". Do not create an event for every email that is sent only the ones that specifically talk about an event that is happening.\n
                         Return the extracted details in this format:\n
+                        {\n
+                        events: [\n
                         {\n
                         "summary": "Event Summary",\n
                         "start_time": "YYYY-MM-DDThh:mm:ssZ",\n
@@ -303,6 +323,8 @@ async function parseEmailWithChatGPT(emailBody, sender, subject, emailDate) {
                         "name": "Sender Name",\n
                         "email": "sender@example.com"\n
                         }\n
+                        }\n
+                        ]\n
                         }
                         `
                     },
@@ -342,7 +364,19 @@ async function parseEmailWithChatGPT(emailBody, sender, subject, emailDate) {
         return null;
     }
 }
-
+async function queueCalendarEvent(eventDetails) {
+    try {
+        const events = await new Promise((resolve) =>
+            chrome.storage.local.get("pendingEvents", (result) => resolve(result.pendingEvents || []))
+        );
+        events.push(eventDetails);
+        chrome.storage.local.set({ pendingEvents: events }, () => {
+            console.log("Event queued for review:", eventDetails);
+        });
+    } catch (error) {
+        console.error("Error queuing event:", error);
+    }
+}
 // Create calendar event
 async function createCalendarEvent(eventDetails) {
     const token = await getAuthToken(); // Ensure token is fetched correctly
@@ -371,14 +405,6 @@ async function createCalendarEvent(eventDetails) {
         console.error("Unexpected error in createCalendarEvent:", error);
     }
 }
-
-// Listen for messages
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    if (request.action === "fetchEmails") {
-        fetchEmails().then(() => sendResponse({ status: "Emails fetched and processed" }));
-    }
-    return true;
-});
 
 setInterval(fetchEmails, POLL_INTERVAL);
 fetchEmails();

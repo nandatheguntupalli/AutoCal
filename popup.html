@@ -5,31 +5,34 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AutoCal</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="./popup.css">
+    <link rel="stylesheet" href="popup.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&icon_names=outgoing_mail" />
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <div class="title">AutoCal</div>
-            <div class="subtitle">Smart Email-to-Calendar Manager</div>
-        </div>
-        
-        <div class="button-group">
-            <button class="button" id="fetchEmailsButton">
-                <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#e8eaed">
-                    <path d="M160-160q-33 0-56.5-23.5T80-240v-480q0-33 23.5-56.5T160-800h640q33 0 56.5 23.5T880-720v480q0 33-23.5 56.5T800-160H160Zm320-280L160-640v400h640v-400L480-440Zm0-80 320-200H160l320 200ZM160-640v-80 480-400Z"/>
-                </svg>
+    <div class="popup-container">
+        <!-- Header -->
+        <header class="popup-header">
+            <div class="header-container">
+                <img src="assets/nofill_calendar_transparent_white.png" alt="">
+                <h1 class="popup-title">AutoCal</h1>
+            </div>
+        </header>
+
+        <!-- Pending Events Section -->
+        <main class="events-container">
+            <ul class="events-list" id="eventList">
+                <!-- Events will be dynamically added here -->
+            </ul>
+        </main>
+
+        <!-- Footer with Fetch Button -->
+        <footer class="popup-footer">
+            <button id="fetchEmailsButton" class="fetch-button">
                 Fetch Emails
             </button>
-        </div>
-
-        <div class="status" id="statusMessage">Waiting for user action...</div>
-
-        <div class="bookmarks">
-            <div class="bookmarks-title">Fetched Emails</div>
-            <ul id="emailsList"></ul>
-        </div>
+        </footer>
     </div>
+
     <script type="module" src="popup.js"></script>
 </body>
 </html>
