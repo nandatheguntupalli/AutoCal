@@ -26,9 +26,7 @@ async function loadPendingEvents() {
     eventList.innerHTML = "";
 
     if (events.length === 0) {
-        const emptyState = document.createElement("div");
-        emptyState.className = "empty-state";
-        emptyState.innerHTML = `
+        eventList.innerHTML = `
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240">
             <!-- Checkmark -->
             <path d="M80 120 L110 150 L170 90" 
@@ -39,7 +37,6 @@ async function loadPendingEvents() {
                     fill="none"/>
             </svg>
         `
-        document.querySelector(".events-container").replaceChild(emptyState, eventList);
         return;
     }
 
