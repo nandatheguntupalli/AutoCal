@@ -39,7 +39,7 @@ async function loadPendingEvents() {
                     fill="none"/>
             </svg>
         `
-        eventList.appendChild(emptyState);
+        document.querySelector(".events-container").replaceChild(emptyState, eventList);
         return;
     }
 
@@ -283,6 +283,12 @@ document.querySelector(".settings-button").addEventListener("click", () => {
     setTimeout(() => {
         location.href = "settings.html";
     }, 200);
+});
+
+// Event listener for clear events button
+document.querySelector(".clear-button").addEventListener("click", () => {
+    chrome.storage.local.set({ pendingEvents: [] });
+    loadPendingEvents();
 });
 
 // Initial load of pending events

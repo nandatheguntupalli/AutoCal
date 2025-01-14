@@ -306,6 +306,8 @@ body {
     background: var(--gray-light);
     /* background: var(--primary-color); */
     text-align: center;
+    display: flex;
+    gap: 10px;
 }
 
 .fetch-button {
@@ -319,6 +321,24 @@ body {
     cursor: pointer;
     transition: background 0.2s ease;
     color: white;
+}
+
+.clear-button {
+    background: var(--danger-color);
+    padding-left: 12px;
+    padding-right: 12px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.clear-button svg {
+    fill: white;
+}
+
+.clear-button:hover {
+    background: #dc2626;
 }
 
 .event-header {
