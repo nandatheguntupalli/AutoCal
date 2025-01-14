@@ -1,0 +1,17 @@
+body {
+    display: block;
+}
+
+.popup-header {
+    width: 100%;
+    height: 47.2px;
+}
+
+.header-container h1 {
+    font-weight: normal;
+}
+
+.settings-container {
+    width: 100%;
+    height: 450.4px;
+}

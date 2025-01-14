@@ -270,5 +270,20 @@ async function getAuthToken() {
     });
 }
 
+// handle switching to settings and animation
+if (sessionStorage.getItem("returning")) {
+    document.addEventListener("DOMContentLoaded", () => {
+        document.querySelector(".popup-container").classList.add("fade-in");
+    });
+}
+
+document.querySelector(".settings-button").addEventListener("click", () => {
+    const popupContainer = document.querySelector(".popup-container");
+    popupContainer.classList.add("fade-out");
+    setTimeout(() => {
+        location.href = "settings.html";
+    }, 200);
+});
+
 // Initial load of pending events
 loadPendingEvents();
