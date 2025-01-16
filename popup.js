@@ -211,6 +211,8 @@ async function loadPendingEvents() {
 
         eventList.appendChild(card);
     });
+
+    await updateNotificationBadge();
 }
 
 // Approve an event and send to Google Calendar
@@ -287,6 +289,14 @@ document.querySelector(".clear-button").addEventListener("click", () => {
     chrome.storage.local.set({ pendingEvents: [] });
     loadPendingEvents();
 });
+
+async function updateNotificationBadge() {
+    const numEvents = await new Promise((resolve) =>
+        chrome.storage.local.get("pendingEvents", (result) => resolve(result.pendingEvents.length || 0))
+    );
+    
+    chrome.action.setBadgeText({ text: numEvents === 0 ? "" : numEvents.toString() });
+}
 
 // Initial load of pending events
 loadPendingEvents();
