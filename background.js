@@ -254,6 +254,97 @@ async function fetchEmails() {
 
 const daysOfWeek = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
+async function parseSelectionWithChatGPT(selectedText) {
+    try {
+        const localDate = new Date();
+        const formattedLocalDate = localDate.toLocaleString("en-US", {
+            hour12: false, 
+            weekday: "long", 
+            year: "numeric", 
+            day: "numeric", 
+            month: "numeric", 
+            hour: "numeric", 
+            minute: "numeric"
+        });
+
+        const gptInput = `
+        User selected text: ${selectedText}\n
+        Current local date: ${formattedLocalDate}
+        `;
+
+        console.log("ChatGPT Input:\n", gptInput);
+
+        const response = await fetch("https://maxvek.com/autocal/chatgpt", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                model: "gpt-4o-mini",
+                messages: [
+                    {
+                        role: "system",
+                        content: `
+                        You are an assistant that extracts event details (summary, start_time, end_time, and location) as JSON from text that a user selects on a website. You will be given the selected text in the following format, where things in {} represent a variable:
+                        \n-- Start of Input --\n
+                        User selected text: {The text that the user has selected on the website}\n
+                        Current local date: {The date and time for the user when they selected the text}\n
+                        -- End of Input --\n
+                        You should extract the summary of the event from the selected text. Find the start_time and end_time by looking through the selected text. The start_time and end_time are assumed to be in the user's local time zone. If a relative date (e.g., "this Friday") is mentioned, calculate the exact date using the "Current local date" line as a reference. For example, if the email says "this Friday" and today is Monday, then **this Friday** should be the next Friday in the calendar, not the previous Friday. If there is no specific end time mentioned, the default length of the event should be 1 hour. 
+                        Additionally, if the event is an all-day event, make the start_time 12:00am and end_time 11:59pm.
+                        Finally, when returning the start_time and end_time, format these in the ISO format, which is shown below. If no location is mentioned, leave the location field blank.
+                        If there are multiple events explicity stated in the email, add each one to the list in the output, matches to the key "events".
+                        If there is no event mentioned, return an empty list for "events". Do not create an event for every email that is sent only the ones that specifically talk about an event that is happening.\n
+                        Return the extracted details in this format:\n
+                        {\n
+                        events: [\n
+                        {\n
+                        "summary": "Event Summary",\n
+                        "start_time": "YYYY-MM-DDThh:mm:ssZ",\n
+                        "end_time": "YYYY-MM-DDThh:mm:ssZ",\n
+                        "location": "Event Location",\n
+                        }\n
+                        ]\n
+                        }
+                        `
+                    },
+                    {
+                        role: "user",
+                        content: gptInput
+                    }
+                ],
+                response_format: { type: "json_object" },
+            }),
+        });
+
+        // Check if the response is OK
+        if (response.ok) {
+            const data = await response.json();
+
+            // Log and parse the result from ChatGPT's response
+            const extractedContent = data.choices[0]?.message?.content?.trim();
+            console.log("ChatGPT Parsed Response:", extractedContent);
+
+            try {
+                // Attempt to parse the response as JSON
+                return JSON.parse(extractedContent);
+            } catch (jsonError) {
+                console.error("Failed to parse ChatGPT response as JSON:", jsonError);
+                return null;
+            }
+        } else {
+            // Log the error details from the API response
+            const errorData = await response.json();
+            console.error("Error calling ChatGPT API:", errorData);
+            return null;
+        }
+    } catch (error) {
+        // Handle unexpected errors (e.g., network issues)
+        console.error("Unexpected error in parseEmailWithChatGPT:", error);
+        return null;
+    }
+}
+
 async function parseEmailWithChatGPT(emailBody, sender, subject, emailDate) {
     try {
         // Send a POST request to the OpenAI API
@@ -405,6 +496,49 @@ async function createCalendarEvent(eventDetails) {
         console.error("Unexpected error in createCalendarEvent:", error);
     }
 }
+
+// Create the context menu when the extension is installed
+chrome.runtime.onInstalled.addListener(() => {
+    chrome.contextMenus.create({
+      id: "addEvent",
+      title: "Add event",
+      contexts: ["selection"] // Show only when text is selected
+    });
+  });
+  
+// Handle the context menu click event
+chrome.contextMenus.onClicked.addListener(async (info, tab) => {
+if (info.menuItemId === "addEvent" && info.selectionText) {
+    // Send the selected text to a content script or process it directly
+    const eventData = await parseSelectionWithChatGPT(info.selectionText);
+    
+    if (eventData.events.length === 0) {
+        console.log("%cEmail has no events!", "font-size: 30px;");
+        return;
+    }
+    for (let i = 0; i < eventData.events.length; i++) {
+        const parsedDetails = eventData.events[i];
+        const eventDetails = {
+            summary: parsedDetails.summary,
+            location: parsedDetails.location || "", // Default to empty string if location is null
+            start: {
+                dateTime: parsedDetails.start_time.slice(0, -1),
+                timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone, // Set the appropriate time zone
+            },
+            end: {
+                dateTime: parsedDetails.end_time.slice(0, -1),
+                timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone, // Set the appropriate time zone
+            }
+        };
+        
+        // Log the transformed event details for debugging
+        console.log("Event Details Sent to Google Calendar API:", eventDetails);
+
+        // Create the calendar event
+        await createCalendarEvent(eventDetails);
+    }
+}
+});
 
 setInterval(fetchEmails, POLL_INTERVAL);
 fetchEmails();

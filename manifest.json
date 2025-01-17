@@ -2,7 +2,7 @@
   "name": "AutoCal",
   "version": "1.0.0",
   "description": "Email to Calendar Manager",
-  "permissions": ["identity", "storage", "activeTab", "notifications"],
+  "permissions": ["identity", "storage", "activeTab", "notifications", "contextMenus", "scripting"],
   "host_permissions": ["https://mail.google.com/*", "https://www.googleapis.com/*"],
   "background": {
     "service_worker": "background.js"
