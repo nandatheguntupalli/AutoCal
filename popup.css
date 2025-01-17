@@ -93,13 +93,6 @@ body {
     margin-top: 4px;
 }
 
-.events-container {
-    /* background: var(--primary-color); */
-    /* padding: 10px; */
-    /* padding-left: 10px;
-    padding-right: 10px; */
-}
-
 .events-list {
     list-style: none;
     display: flex;
