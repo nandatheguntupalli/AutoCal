@@ -455,6 +455,7 @@ async function parseEmailWithChatGPT(emailBody, sender, subject, emailDate) {
         return null;
     }
 }
+
 async function queueCalendarEvent(eventDetails) {
     try {
         const events = await new Promise((resolve) =>
@@ -468,6 +469,21 @@ async function queueCalendarEvent(eventDetails) {
         console.error("Error queuing event:", error);
     }
 }
+
+async function queueHighlightedEvent(eventDetails) {
+    try {
+        const highlightedEvents = await new Promise((resolve) =>
+            chrome.storage.local.get("pendingHighlightedEvents", (result) => resolve(result.pendingHighlightedEvents || []))
+        );
+        highlightedEvents.push(eventDetails);
+        chrome.storage.local.set({ pendingHighlightedEvents: highlightedEvents }, () => {
+            console.log("Highlighted event queued for review:", eventDetails);
+        });
+    } catch (error) {
+        console.error("Error queuing highlighted event:", error);
+    }
+}
+
 // Create calendar event
 async function createCalendarEvent(eventDetails) {
     const token = await getAuthToken(); // Ensure token is fetched correctly
@@ -535,7 +551,7 @@ if (info.menuItemId === "addEvent" && info.selectionText) {
         console.log("Event Details Sent to Google Calendar API:", eventDetails);
 
         // Create the calendar event
-        await createCalendarEvent(eventDetails);
+        await queueHighlightedEvent(eventDetails);
     }
 }
 });
