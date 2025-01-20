@@ -386,6 +386,24 @@ body {
     animation: fade-out 0.2s linear forwards;
 }
 
+.list-selector {
+    display: flex;
+    background: rgb(52, 51, 56);
+    border-radius: 20px;
+    padding: 5px;
+}
+
+.list-selector div {
+    cursor: pointer;
+    transition: background 0.2s ease;
+    padding: 5px 15px;
+    border-radius: 15px;
+}
+
+.list-selector .active {
+    background: rgb(99, 98, 103);
+}
+
 @keyframes fade-in {
     from {
         opacity: 0;
