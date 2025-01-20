@@ -17,7 +17,9 @@ if (fetchEmailsButton) {
     });
 }
 
-function createHTMLEvent(event) {
+function createHTMLEvent(index, events) {
+    const event = events[index];
+
     const card = document.createElement("div");
     card.className = "event-card";
 
@@ -188,7 +190,7 @@ async function loadPendingEvents() {
     }
 
     events.forEach((event, index) => {
-        const card = createHTMLEvent(event);
+        const card = createHTMLEvent(index, events);
         eventList.appendChild(card);
     });
 }
@@ -218,7 +220,7 @@ async function loadHighlightedEvents() {
     }
 
     events.forEach((event, index) => {
-        const card = createHTMLEvent(event);
+        const card = createHTMLEvent(index, events);
         eventList.appendChild(card);
     })
 }
