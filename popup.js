@@ -76,10 +76,10 @@ function createHTMLEvent(index, events, storageName) {
         </div>
         <div class="event-actions">
             <button class="event-button reject-button">
-                <span>✘</span>Reject
+                <span><svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#e8eaed"><path d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"/></svg></span>
             </button>
             <button class="event-button approve-button">
-                <span>✔</span>Accept
+                <span><svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#e8eaed"><path d="M382-240 154-468l57-57 171 171 367-367 57 57-424 424Z"/></svg></span>
             </button>
         </div>
     `;

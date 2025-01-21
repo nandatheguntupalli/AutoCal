@@ -257,6 +257,17 @@ body {
     gap: 8px;
 }
 
+.event-button svg {
+    fill: white;
+    width: 22px;
+}
+
+.event-button span {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
 .approve-button {
     background: var(--success-color);
     color: var(--white);
