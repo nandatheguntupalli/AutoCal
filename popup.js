@@ -17,7 +17,7 @@ if (fetchEmailsButton) {
     });
 }
 
-function createHTMLEvent(index, events) {
+function createHTMLEvent(index, events, storageName) {
     const event = events[index];
 
     const card = document.createElement("div");
@@ -154,11 +154,11 @@ function createHTMLEvent(index, events) {
 
     // Approve/Reject handlers
     card.querySelector('.approve-button').addEventListener('click', () => {
-        approveEvent(index, events);
+        approveEvent(index, events, storageName);
     });
 
     card.querySelector('.reject-button').addEventListener('click', () => {
-        rejectEvent(index, events);
+        rejectEvent(index, events, storageName);
     });
 
     return card;
@@ -190,7 +190,7 @@ async function loadPendingEvents() {
     }
 
     events.forEach((event, index) => {
-        const card = createHTMLEvent(index, events);
+        const card = createHTMLEvent(index, events, "pendingEvents");
         eventList.appendChild(card);
     });
 }
@@ -220,25 +220,33 @@ async function loadHighlightedEvents() {
     }
 
     events.forEach((event, index) => {
-        const card = createHTMLEvent(index, events);
+        const card = createHTMLEvent(index, events, "pendingHighlightedEvents");
         eventList.appendChild(card);
     })
 }
 
 // Approve an event and send to Google Calendar
-async function approveEvent(index, events) {
+async function approveEvent(index, events, storageName) {
     const event = events[index];
     events.splice(index, 1); // Remove event from the queue
-    await chrome.storage.local.set({ pendingEvents: events });
+    await chrome.storage.local.set({ [storageName]: events });
     await createCalendarEvent(event); // Send to Google Calendar
-    loadPendingEvents(); // Refresh UI
+    if (storageName === "pendingEvents") {
+        loadPendingEvents();
+    } else {
+        loadHighlightedEvents();
+    }
 }
 
 // Reject an event
-async function rejectEvent(index, events) {
+async function rejectEvent(index, events, storageName) {
     events.splice(index, 1); // Remove event from the queue
-    await chrome.storage.local.set({ pendingEvents: events });
-    loadPendingEvents(); // Refresh UI
+    await chrome.storage.local.set({ [storageName]: events });
+    if (storageName === "pendingEvents") {
+        loadPendingEvents();
+    } else {
+        loadHighlightedEvents();
+    }
 }
 
 // Helper function to send an event to Google Calendar
