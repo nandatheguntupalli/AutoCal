@@ -536,15 +536,19 @@ if (info.menuItemId === "addEvent" && info.selectionText) {
         const parsedDetails = eventData.events[i];
         const eventDetails = {
             summary: parsedDetails.summary,
-            location: parsedDetails.location || "", // Default to empty string if location is null
+            location: parsedDetails.location || "",
+            description: parsedDetails.emailLink, // Add email link to description
             start: {
-                dateTime: parsedDetails.start_time.slice(0, -1),
-                timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone, // Set the appropriate time zone
+              dateTime: parsedDetails.start_time.slice(0, -1),
+              timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
             },
             end: {
-                dateTime: parsedDetails.end_time.slice(0, -1),
-                timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone, // Set the appropriate time zone
-            }
+              dateTime: parsedDetails.end_time.slice(0, -1),
+              timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+            },
+            attendees: [
+              { email: parsedDetails.sender.email } // Add sender as attendee
+            ],
         };
         
         // Log the transformed event details for debugging

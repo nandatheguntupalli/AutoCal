@@ -227,26 +227,78 @@ async function loadHighlightedEvents() {
 
 // Approve an event and send to Google Calendar
 async function approveEvent(index, events, storageName) {
+    const eventCard = eventList.children[index]; // Get the event card
     const event = events[index];
-    events.splice(index, 1); // Remove event from the queue
-    await chrome.storage.local.set({ [storageName]: events });
-    await createCalendarEvent(event); // Send to Google Calendar
-    if (storageName === "pendingEvents") {
-        loadPendingEvents();
-    } else {
-        loadHighlightedEvents();
-    }
+
+    // Create an Undo button outside of eventCard
+    const undoButton = document.createElement("button");
+    undoButton.className = "undo-button";
+    undoButton.innerText = "Undo";
+
+    // Append Undo button separately in the event list container
+    eventList.appendChild(undoButton);
+
+    // Slide event card away
+    eventCard.classList.add("fade-out-slide");
+
+    let undoTimeout = setTimeout(async () => {
+        events.splice(index, 1); // Remove event from the queue
+        await chrome.storage.local.set({ [storageName]: events });
+        await createCalendarEvent(event); // Send to Google Calendar
+
+        if (storageName === "pendingEvents") {
+            loadPendingEvents();
+        } else {
+            loadHighlightedEvents();
+        }
+
+        // Remove Undo button after event is deleted
+        undoButton.remove();
+    }, 5000); // 5 seconds delay before final deletion
+
+    // Undo action
+    undoButton.addEventListener("click", () => {
+        clearTimeout(undoTimeout); // Cancel event deletion
+        eventCard.classList.remove("fade-out-slide"); // Remove animation
+        eventList.removeChild(undoButton); // Remove Undo button
+    });
 }
 
-// Reject an event
 async function rejectEvent(index, events, storageName) {
-    events.splice(index, 1); // Remove event from the queue
-    await chrome.storage.local.set({ [storageName]: events });
-    if (storageName === "pendingEvents") {
-        loadPendingEvents();
-    } else {
-        loadHighlightedEvents();
-    }
+    const eventCard = eventList.children[index]; // Get the event card
+    const event = events[index];
+
+    // Create an Undo button outside of eventCard
+    const undoButton = document.createElement("button");
+    undoButton.className = "undo-button";
+    undoButton.innerText = "Undo";
+
+    // Append Undo button separately in the event list container
+    eventList.appendChild(undoButton);
+
+    // Slide event card away
+    eventCard.classList.add("fade-out-slide-left");
+
+    let undoTimeout = setTimeout(async () => {
+        events.splice(index, 1); // Remove event from the queue
+        await chrome.storage.local.set({ [storageName]: events });
+
+        if (storageName === "pendingEvents") {
+            loadPendingEvents();
+        } else {
+            loadHighlightedEvents();
+        }
+
+        // Remove Undo button after event is deleted
+        undoButton.remove();
+    }, 5000); // 5 seconds delay before final deletion
+
+    // Undo action
+    undoButton.addEventListener("click", () => {
+        clearTimeout(undoTimeout); // Cancel event deletion
+        eventCard.classList.remove("fade-out-slide-left"); // Remove animation
+        eventList.removeChild(undoButton); // Remove Undo button
+    });
 }
 
 // Helper function to send an event to Google Calendar
