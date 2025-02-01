@@ -474,31 +474,35 @@ body {
     }
 }
 
+/* Prevent the events list from expanding horizontally */
+.events-list {
+    overflow-x: hidden; /* Hide horizontal scrolling */
+}
+
 /* Fade out and slide away animation */
 @keyframes fadeOutSlide {
     0% {
         opacity: 1;
-        transform: translateX(0);
+        transform: scale(1) translateX(0);
     }
     100% {
         opacity: 0;
-        transform: translateX(100px);
+        transform: scale(0.9) translateX(100%);
     }
 }
-
 
 @keyframes fadeOutSlideLeft {
     0% {
         opacity: 1;
-        transform: translateX(0);
+        transform: scale(1) translateX(0);
     }
     100% {
         opacity: 0;
-        transform: translateX(-100px);
+        transform: scale(0.9) translateX(-100%);
     }
 }
 
-/* Class to trigger animation */
+/* Apply the animations */
 .fade-out-slide {
     animation: fadeOutSlide 0.5s ease forwards;
 }
