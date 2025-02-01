@@ -233,16 +233,19 @@ async function approveEvent(index, events, storageName) {
     // Create an Undo button outside of eventCard
     const undoButton = document.createElement("button");
     undoButton.className = "undo-button";
-    undoButton.innerText = "Undo";
+    undoButton.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#e8eaed"><path d="M280-200v-80h284q63 0 109.5-40T720-420q0-60-46.5-100T564-560H312l104 104-56 56-200-200 200-200 56 56-104 104h252q97 0 166.5 63T800-420q0 94-69.5 157T564-200H280Z"/></svg>
+    `;
+    undoButton.setAttribute("title", "Undo Action");
 
-    // Append Undo button separately in the event list container
-    eventList.appendChild(undoButton);
+    // Append Undo button below the event list
+    document.querySelector(".undo-container").appendChild(undoButton);
 
     // Slide event card away
     eventCard.classList.add("fade-out-slide");
 
     let undoTimeout = setTimeout(async () => {
-        events.splice(index, 1); // Remove event from the queue
+        events.splice(index, 1); // Remove event from queue
         await chrome.storage.local.set({ [storageName]: events });
         await createCalendarEvent(event); // Send to Google Calendar
 
@@ -260,7 +263,7 @@ async function approveEvent(index, events, storageName) {
     undoButton.addEventListener("click", () => {
         clearTimeout(undoTimeout); // Cancel event deletion
         eventCard.classList.remove("fade-out-slide"); // Remove animation
-        eventList.removeChild(undoButton); // Remove Undo button
+        undoButton.remove(); // Remove Undo button
     });
 }
 
@@ -271,16 +274,19 @@ async function rejectEvent(index, events, storageName) {
     // Create an Undo button outside of eventCard
     const undoButton = document.createElement("button");
     undoButton.className = "undo-button";
-    undoButton.innerText = "Undo";
+    undoButton.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#e8eaed"><path d="M280-200v-80h284q63 0 109.5-40T720-420q0-60-46.5-100T564-560H312l104 104-56 56-200-200 200-200 56 56-104 104h252q97 0 166.5 63T800-420q0 94-69.5 157T564-200H280Z"/></svg>
+    `;
+    undoButton.setAttribute("title", "Undo Action");
 
-    // Append Undo button separately in the event list container
-    eventList.appendChild(undoButton);
+    // Append Undo button below the event list
+    document.querySelector(".undo-container").appendChild(undoButton);
 
     // Slide event card away
     eventCard.classList.add("fade-out-slide-left");
 
     let undoTimeout = setTimeout(async () => {
-        events.splice(index, 1); // Remove event from the queue
+        events.splice(index, 1); // Remove event from queue
         await chrome.storage.local.set({ [storageName]: events });
 
         if (storageName === "pendingEvents") {
@@ -297,7 +303,7 @@ async function rejectEvent(index, events, storageName) {
     undoButton.addEventListener("click", () => {
         clearTimeout(undoTimeout); // Cancel event deletion
         eventCard.classList.remove("fade-out-slide-left"); // Remove animation
-        eventList.removeChild(undoButton); // Remove Undo button
+        undoButton.remove(); // Remove Undo button
     });
 }
 
