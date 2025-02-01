@@ -142,7 +142,7 @@ body {
 }
 
 .event-card .time-div input {
-    width: 125px;
+    width: 126px;
 }
 
 .event-card .container {
@@ -369,6 +369,7 @@ body {
 
 .email-icon:hover {
     color: var(--primary-color);
+    transform: scale(1.1);
 }
 
 .fetch-button:hover {
