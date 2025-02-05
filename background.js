@@ -545,10 +545,7 @@ if (info.menuItemId === "addEvent" && info.selectionText) {
             end: {
               dateTime: parsedDetails.end_time.slice(0, -1),
               timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-            },
-            attendees: [
-              { email: parsedDetails.sender.email } // Add sender as attendee
-            ],
+            }
         };
         
         // Log the transformed event details for debugging

@@ -70,7 +70,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: left;
-    /* padding-left: 4px; */
+    /*padding-left: 4px;*/
     gap: 10px;
 }
 
@@ -275,7 +275,7 @@ body {
 
 .approve-button:hover {
     background: #16a34a;
-    transform: scale(1.1); /* Slightly increase button size on hover */
+    transform: scale(1.05); /* Slightly increase button size on hover */
 }
 
 /* Reject Button Hover Effect */
@@ -286,7 +286,7 @@ body {
 
 .reject-button:hover {
     background: #dc2626;
-    transform: scale(1.1); /* Slightly increase button size on hover */
+    transform: scale(1.05); /* Slightly increase button size on hover */
 }
 
 .action-approve {
