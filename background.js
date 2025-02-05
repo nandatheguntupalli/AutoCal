@@ -35,17 +35,27 @@ chrome.runtime.onInstalled.addListener(() => {
 
 function getAuthToken() {
     return new Promise((resolve, reject) => {
-        chrome.identity.getAuthToken({ interactive: true }, (token) => {
-            if (chrome.runtime.lastError || !token) {
-                console.error("Auth Error:", chrome.runtime.lastError?.message || "No token returned");
-                reject(chrome.runtime.lastError || new Error("Failed to get token"));
-                return;
+      // First, try to get a cached token (non-interactively)
+      chrome.identity.getAuthToken({ interactive: false }, (token) => {
+        if (chrome.runtime.lastError || !token) {
+          console.warn("No cached token available, requesting interactively...");
+          // Try to get a token interactively if the cached token isn’t available or valid
+          chrome.identity.getAuthToken({ interactive: true }, (tokenInteractive) => {
+            if (chrome.runtime.lastError || !tokenInteractive) {
+              console.error("Auth Error:", chrome.runtime.lastError ? chrome.runtime.lastError.message : "No token returned");
+              reject(chrome.runtime.lastError || new Error("Failed to get token"));
+              return;
             }
-            console.log("Access Token:", token);
-            resolve(token);
-        });
+            console.log("Access Token (interactive):", tokenInteractive);
+            resolve(tokenInteractive);
+          });
+        } else {
+          console.log("Access Token (cached):", token);
+          resolve(token);
+        }
+      });
     });
-}
+  }
 
 // Fetch the user's information using their access token
 async function getUserInfo(token) {
@@ -111,22 +121,34 @@ function getProcessedEmailIds() {
 
 // Fetch email details
 async function fetchEmailDetails(token, messageId) {
+    // Check that both token and messageId are provided
+    if (!token) {
+        console.error("fetchEmailDetails error: No auth token provided.");
+        return null;
+    }
+    if (!messageId) {
+        console.error("fetchEmailDetails error: No messageId provided.");
+        return null;
+    }
+    
     try {
         const response = await fetch(
             `https://www.googleapis.com/gmail/v1/users/me/messages/${messageId}`,
             { headers: { Authorization: `Bearer ${token}` } }
         );
 
-        if (response.ok) {
-            const emailDetails = await response.json();
-            console.log("Fetched Email Details:", emailDetails);
-            return emailDetails;
-        } else {
-            console.error("Error fetching email details:", response.statusText);
+        if (!response.ok) {
+            console.error(
+                `Error fetching email details (status ${response.status}): ${response.statusText}`
+            );
             return null;
         }
+
+        const emailDetails = await response.json();
+        console.log("Fetched Email Details:", emailDetails);
+        return emailDetails;
     } catch (error) {
-        console.error("Error in fetchEmailDetails:", error);
+        console.error("Error in fetchEmailDetails:", error.message || error);
         return null;
     }
 }
