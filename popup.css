@@ -60,6 +60,9 @@ body {
     height: 25px;
     border-radius: 100%;
     cursor: pointer;
+
+    /* temporarily disabling button */
+    display: none;
 }
 
 .popup-header svg:hover {
@@ -368,7 +371,7 @@ body {
 
 .email-icon:hover {
     color: var(--primary-color);
-    transform: scale(1.1);
+    transform: scale(1.05);
 }
 
 .fetch-button:hover {
