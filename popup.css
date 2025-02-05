@@ -84,7 +84,6 @@ body {
     font-size: 22px;
     font-weight: 700;
     display: inline;
-
 }
 
 .popup-subtitle {
@@ -418,46 +417,11 @@ body {
 .list-selector .active {
     background: rgb(99, 98, 103);
 }
-.undo-container {
-    position: fixed;
-    bottom: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-}
-
-.undo-button {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background-color: #4285F4; /* Google's Blue */
-    border: none;
-    padding: 10px;
-    border-radius: 50%;
-    width: 50px;
-    height: 50px;
-    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.2);
-    cursor: pointer;
-    transition: transform 0.3s ease, background-color 0.3s ease;
-}
-
-.undo-button:hover {
-    background-color: #3367D6;
-    transform: scale(1.1);
-}
-
-.undo-button svg {
-    fill: white;
-}
 
 @keyframes fade-in {
     from {
         opacity: 0;
     }
-
     to {
         opacity: 1;
     }
@@ -468,7 +432,6 @@ body {
         opacity: 1;
         /* transform: translateY(0); */
     }
-
     to {
         opacity: 0;
         /* transform: translateY(-20px); */
@@ -511,4 +474,3 @@ body {
 .fade-out-slide-left {
     animation: fadeOutSlideLeft 0.5s ease forwards;
 }
-

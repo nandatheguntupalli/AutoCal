@@ -5,7 +5,7 @@ const statusMessage = document.getElementById("statusMessage");
 // Fetch emails on button click
 if (fetchEmailsButton) {
     fetchEmailsButton.addEventListener("click", async () => {
-        console.log("Fetch Emails clicked")
+        console.log("Fetch Emails clicked");
 
         chrome.runtime.sendMessage({ action: "fetchEmails" }, (response) => {
             if (response && response.success) {
@@ -104,9 +104,9 @@ function createHTMLEvent(index, events, storageName) {
         startTimeInput.classList.remove('invalid-time');
         endTimeInput.classList.remove('invalid-time');
         
-        if (startTime == "" || endTime == "") {
-            if (startTime == "") startTimeInput.classList.add("invalid-time");
-            if (endTime == "") endTimeInput.classList.add("invalid-time");
+        if (startTime === "" || endTime === "") {
+            if (startTime === "") startTimeInput.classList.add("invalid-time");
+            if (endTime === "") endTimeInput.classList.add("invalid-time");
             return false;
         } else if (endDateTime <= startDateTime) {
             endTimeInput.classList.add('invalid-time');
@@ -154,11 +154,11 @@ function createHTMLEvent(index, events, storageName) {
 
     // Approve/Reject handlers
     card.querySelector('.approve-button').addEventListener('click', () => {
-        approveEvent(index, events, storageName);
+        approveEvent(index, events, "pendingEvents");
     });
 
     card.querySelector('.reject-button').addEventListener('click', () => {
-        rejectEvent(index, events, storageName);
+        rejectEvent(index, events, "pendingEvents");
     });
 
     return card;
@@ -185,7 +185,7 @@ async function loadPendingEvents() {
                     stroke-linejoin="round" 
                     fill="none"/>
             </svg>
-        `
+        `;
         return;
     }
 
@@ -215,36 +215,26 @@ async function loadHighlightedEvents() {
                 stroke-linejoin="round" 
                 fill="none"/>
         </svg>
-        `
+        `;
         return;
     }
 
     events.forEach((event, index) => {
         const card = createHTMLEvent(index, events, "pendingHighlightedEvents");
         eventList.appendChild(card);
-    })
+    });
 }
 
 // Approve an event and send to Google Calendar
 async function approveEvent(index, events, storageName) {
-    const eventCard = eventList.children[index]; // Get the event card
+    const eventCard = eventList.children[index];
     const event = events[index];
 
-    // Create an Undo button outside of eventCard
-    const undoButton = document.createElement("button");
-    undoButton.className = "undo-button";
-    undoButton.innerHTML = `
-        <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#e8eaed"><path d="M280-200v-80h284q63 0 109.5-40T720-420q0-60-46.5-100T564-560H312l104 104-56 56-200-200 200-200 56 56-104 104h252q97 0 166.5 63T800-420q0 94-69.5 157T564-200H280Z"/></svg>
-    `;
-    undoButton.setAttribute("title", "Undo Action");
-
-    // Append Undo button below the event list
-    document.querySelector(".undo-container").appendChild(undoButton);
-
-    // Slide event card away
+    // Slide event card away with fade-out animation
     eventCard.classList.add("fade-out-slide");
 
-    let undoTimeout = setTimeout(async () => {
+    // Wait for animation to complete (e.g. 500ms) then remove event and create calendar event
+    setTimeout(async () => {
         events.splice(index, 1); // Remove event from queue
         await chrome.storage.local.set({ [storageName]: events });
         await createCalendarEvent(event); // Send to Google Calendar
@@ -254,38 +244,16 @@ async function approveEvent(index, events, storageName) {
         } else {
             loadHighlightedEvents();
         }
-
-        // Remove Undo button after event is deleted
-        undoButton.remove();
-    }, 5000); // 5 seconds delay before final deletion
-
-    // Undo action
-    undoButton.addEventListener("click", () => {
-        clearTimeout(undoTimeout); // Cancel event deletion
-        eventCard.classList.remove("fade-out-slide"); // Remove animation
-        undoButton.remove(); // Remove Undo button
-    });
+    }, 500);
 }
 
 async function rejectEvent(index, events, storageName) {
-    const eventCard = eventList.children[index]; // Get the event card
-    const event = events[index];
+    const eventCard = eventList.children[index];
 
-    // Create an Undo button outside of eventCard
-    const undoButton = document.createElement("button");
-    undoButton.className = "undo-button";
-    undoButton.innerHTML = `
-        <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#e8eaed"><path d="M280-200v-80h284q63 0 109.5-40T720-420q0-60-46.5-100T564-560H312l104 104-56 56-200-200 200-200 56 56-104 104h252q97 0 166.5 63T800-420q0 94-69.5 157T564-200H280Z"/></svg>
-    `;
-    undoButton.setAttribute("title", "Undo Action");
-
-    // Append Undo button below the event list
-    document.querySelector(".undo-container").appendChild(undoButton);
-
-    // Slide event card away
+    // Slide event card away with fade-out-left animation
     eventCard.classList.add("fade-out-slide-left");
 
-    let undoTimeout = setTimeout(async () => {
+    setTimeout(async () => {
         events.splice(index, 1); // Remove event from queue
         await chrome.storage.local.set({ [storageName]: events });
 
@@ -294,17 +262,7 @@ async function rejectEvent(index, events, storageName) {
         } else {
             loadHighlightedEvents();
         }
-
-        // Remove Undo button after event is deleted
-        undoButton.remove();
-    }, 5000); // 5 seconds delay before final deletion
-
-    // Undo action
-    undoButton.addEventListener("click", () => {
-        clearTimeout(undoTimeout); // Cancel event deletion
-        eventCard.classList.remove("fade-out-slide-left"); // Remove animation
-        undoButton.remove(); // Remove Undo button
-    });
+    }, 500);
 }
 
 // Helper function to send an event to Google Calendar
@@ -345,7 +303,7 @@ async function getAuthToken() {
     });
 }
 
-// handle switching to settings and animation
+// Handle switching to settings and animation
 if (sessionStorage.getItem("returning")) {
     document.addEventListener("DOMContentLoaded", () => {
         document.querySelector(".popup-container").classList.add("fade-in");
@@ -374,7 +332,7 @@ async function updateNotificationBadge() {
     chrome.action.setBadgeText({ text: numEvents === 0 ? "" : numEvents.toString() });
 }
 
-// handle switching between email and higlighted tabs
+// Handle switching between email and highlighted tabs
 document.querySelector(".list-selector .emails").addEventListener("click", () => {
     document.querySelector(".list-selector .selected-text").classList.remove("active");
     document.querySelector(".list-selector .emails").classList.add("active");
