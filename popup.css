@@ -70,7 +70,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: left;
-    /* padding-left: 4px; */
+    /*padding-left: 4px;*/
     gap: 10px;
 }
 
@@ -84,20 +84,12 @@ body {
     font-size: 22px;
     font-weight: 700;
     display: inline;
-
 }
 
 .popup-subtitle {
     font-size: 14px;
     font-weight: 400;
     margin-top: 4px;
-}
-
-.events-container {
-    /* background: var(--primary-color); */
-    /* padding: 10px; */
-    /* padding-left: 10px;
-    padding-right: 10px; */
 }
 
 .events-list {
@@ -149,7 +141,7 @@ body {
 }
 
 .event-card .time-div input {
-    width: 125px;
+    width: 126px;
 }
 
 .event-card .container {
@@ -257,11 +249,22 @@ body {
     font-size: 14px;
     font-weight: 500;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: transform 0.2s ease, background 0.2s ease; /* Add transform transition */
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 8px;
+}
+
+.event-button svg {
+    fill: white;
+    width: 22px;
+}
+
+.event-button span {
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .approve-button {
@@ -271,8 +274,10 @@ body {
 
 .approve-button:hover {
     background: #16a34a;
+    transform: scale(1.05); /* Slightly increase button size on hover */
 }
 
+/* Reject Button Hover Effect */
 .reject-button {
     background: var(--danger-color);
     color: var(--white);
@@ -280,6 +285,7 @@ body {
 
 .reject-button:hover {
     background: #dc2626;
+    transform: scale(1.05); /* Slightly increase button size on hover */
 }
 
 .action-approve {
@@ -362,6 +368,7 @@ body {
 
 .email-icon:hover {
     color: var(--primary-color);
+    transform: scale(1.1);
 }
 
 .fetch-button:hover {
@@ -393,11 +400,28 @@ body {
     animation: fade-out 0.2s linear forwards;
 }
 
+.list-selector {
+    display: flex;
+    background: rgb(52, 51, 56);
+    border-radius: 20px;
+    padding: 5px;
+}
+
+.list-selector div {
+    cursor: pointer;
+    transition: background 0.2s ease;
+    padding: 5px 15px;
+    border-radius: 15px;
+}
+
+.list-selector .active {
+    background: rgb(99, 98, 103);
+}
+
 @keyframes fade-in {
     from {
         opacity: 0;
     }
-
     to {
         opacity: 1;
     }
@@ -408,9 +432,45 @@ body {
         opacity: 1;
         /* transform: translateY(0); */
     }
-
     to {
         opacity: 0;
         /* transform: translateY(-20px); */
     }
+}
+
+/* Prevent the events list from expanding horizontally */
+.events-list {
+    overflow-x: hidden; /* Hide horizontal scrolling */
+}
+
+/* Fade out and slide away animation */
+@keyframes fadeOutSlide {
+    0% {
+        opacity: 1;
+        transform: scale(1) translateX(0);
+    }
+    100% {
+        opacity: 0;
+        transform: scale(0.9) translateX(100%);
+    }
+}
+
+@keyframes fadeOutSlideLeft {
+    0% {
+        opacity: 1;
+        transform: scale(1) translateX(0);
+    }
+    100% {
+        opacity: 0;
+        transform: scale(0.9) translateX(-100%);
+    }
+}
+
+/* Apply the animations */
+.fade-out-slide {
+    animation: fadeOutSlide 0.5s ease forwards;
+}
+
+.fade-out-slide-left {
+    animation: fadeOutSlideLeft 0.5s ease forwards;
 }
