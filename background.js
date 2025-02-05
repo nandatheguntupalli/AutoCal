@@ -561,11 +561,11 @@ if (info.menuItemId === "addEvent" && info.selectionText) {
             location: parsedDetails.location || "",
             description: parsedDetails.emailLink, // Add email link to description
             start: {
-              dateTime: parsedDetails.start_time.slice(0, -1),
+              dateTime: parsedDetails.start_time,
               timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
             },
             end: {
-              dateTime: parsedDetails.end_time.slice(0, -1),
+              dateTime: parsedDetails.end_time,
               timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
             }
         };

@@ -25,16 +25,16 @@ function createHTMLEvent(index, events, storageName) {
   const startDate = new Date(event.start.dateTime);
   const endDate = new Date(event.end.dateTime);
 
-  // Format date for input values
+  // Format date for input values using local date parts instead of toISOString()
   const formatDateForInput = (date) => {
-    try {
-      return date.toISOString().split("T")[0];
-    } catch (RangeError) {
-      return "";
-    }
+    const year = date.getFullYear();
+    // Months are zero-indexed so we add 1 and pad with a leading zero if needed.
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
   };
 
-  // Format time for input values
+  // Format time for input values remains unchanged
   const formatTimeForInput = (date) => {
     let s = date.toTimeString().slice(0, 5);
     if (s === "Inval") {
