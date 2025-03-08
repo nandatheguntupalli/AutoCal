@@ -26,7 +26,7 @@
     "128": "assets/nofill_calendar_transparent_white.png"
   },
   "oauth2": {
-    "client_id": "242469590577-hihgm06pqb16qlc2u6s3eu7qr87upq5t.apps.googleusercontent.com",
+    "client_id": "242469590577-vppagjg7kkk4o0e8nod5mv8ud0lub7ba.apps.googleusercontent.com",
     "scopes": [
       "https://www.googleapis.com/auth/gmail.readonly",
       "https://www.googleapis.com/auth/calendar"
