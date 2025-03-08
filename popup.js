@@ -287,7 +287,7 @@ document.querySelector(".clear-button").addEventListener("click", () => {
 async function updateNotificationBadge() {
   const numEvents = await new Promise((resolve) =>
     chrome.storage.local.get("pendingEvents", (result) =>
-      resolve(result.pendingEvents.length || 0)
+      resolve((result.pendingEvents || []).length)
     )
   );
   chrome.action.setBadgeText({ text: numEvents === 0 ? "" : numEvents.toString() });
