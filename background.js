@@ -39,7 +39,7 @@ function getAuthToken() {
       chrome.identity.getAuthToken({ interactive: false }, (token) => {
         if (chrome.runtime.lastError || !token) {
           console.warn("No cached token available, requesting interactively...");
-          // Try to get a token interactively if the cached token isn’t available or valid
+          // Try to get a token interactively if the cached token isn't available or valid
           chrome.identity.getAuthToken({ interactive: true }, (tokenInteractive) => {
             if (chrome.runtime.lastError || !tokenInteractive) {
               console.error("Auth Error:", chrome.runtime.lastError ? chrome.runtime.lastError.message : "No token returned");
@@ -561,11 +561,11 @@ if (info.menuItemId === "addEvent" && info.selectionText) {
             location: parsedDetails.location || "",
             description: parsedDetails.emailLink, // Add email link to description
             start: {
-              dateTime: parsedDetails.start_time,
+              dateTime: parsedDetails.start_time.slice(0, -1),
               timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
             },
             end: {
-              dateTime: parsedDetails.end_time,
+              dateTime: parsedDetails.end_time.slice(0, -1),
               timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
             }
         };
